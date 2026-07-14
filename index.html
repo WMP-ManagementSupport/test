@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>2026년 경영지원실 주간업무 대시보드</title>
+<style>
+  :root{
+    --ink:#1f2937;
+    --sub:#6b7280;
+    --faint:#9aa2ad;
+    --line:#e5e8ec;
+    --bg:#f6f7f9;
+    --card:#ffffff;
+    --accent:#3b5580;
+    --accent-soft:#eef2f8;
+    --last-bg:#f4f5f7;
+    --next-bg:#eef3fb;
+    --ok:#7c8591;
+    --prog:#3b5580;
+    --wait:#a6741f;
+    --plan:#4f7a68;
+    --hold:#a83a3a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Pretendard','Noto Sans KR',-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 24px 80px;}
+
+  .now-bar{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:14px;font-size:12.5px;color:var(--sub);font-weight:600;}
+  .now-bar .now-date{color:var(--ink);}
+  .now-bar .now-dot{color:var(--faint);}
+  .now-bar .now-time{color:var(--accent);font-variant-numeric:tabular-nums;}
+
+  /* header */
+  .head-row{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:24px;}
+  .title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 6px;}
+  h1{font-size:22px;font-weight:700;margin:0;letter-spacing:-0.01em;}
+  .sub{color:var(--sub);font-size:13.5px;margin:0;}
+  .head-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+  .week-tag-row{display:flex;align-items:center;gap:8px;}
+  .week-tag{font-size:12px;color:var(--accent);background:var(--accent-soft);padding:5px 12px;border-radius:20px;font-weight:600;white-space:nowrap;}
+  .archive-badge{font-size:11px;color:var(--hold);background:#fbecec;padding:4px 10px;border-radius:20px;font-weight:700;white-space:nowrap;display:none;}
+  .archive-badge.show{display:inline-block;}
+  .week-select{font-size:11px;color:var(--sub);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:4px 8px;cursor:pointer;}
+  .sync-row{display:flex;align-items:center;gap:8px;}
+  .sync-time{font-size:11px;color:var(--faint);}
+  .refresh-btn{font-size:11px;color:var(--accent);background:none;border:1px solid var(--line);border-radius:20px;padding:4px 10px;cursor:pointer;font-weight:600;}
+  .refresh-btn:hover{border-color:var(--accent);}
+  .refresh-btn:disabled{opacity:.5;cursor:default;}
+
+  .search-row{margin-bottom:14px;position:relative;}
+  .search-input{width:100%;font-size:13.5px;padding:11px 40px 11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);}
+  .search-input:focus{outline:none;border-color:var(--accent);}
+  .search-input::placeholder{color:var(--faint);}
+  .search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:none;color:var(--faint);font-size:16px;cursor:pointer;padding:4px 6px;display:none;line-height:1;}
+  .search-clear.show{display:block;}
+  .search-clear:hover{color:var(--hold);}
+
+  /* KPI row */
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:28px;}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;}
+  .kpi .num{font-size:26px;font-weight:700;color:var(--ink);line-height:1.1;}
+  .kpi .lbl{font-size:11.5px;color:var(--sub);margin-top:6px;font-weight:600;}
+  .kpi.total .num{color:var(--accent);}
+  .kpi.prog .num{color:var(--prog);}
+  .kpi.wait .num{color:var(--wait);}
+  .kpi.overdue .num{color:var(--hold);}
+
+  /* filter bar */
+  .filters-row{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+  .filter-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .filter-label{font-size:11.5px;color:var(--faint);font-weight:700;white-space:nowrap;min-width:38px;}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;flex:1;}
+  .chip{border:1px solid var(--line);background:var(--card);color:var(--sub);font-size:12.5px;font-weight:600;
+        padding:7px 14px;border-radius:20px;cursor:pointer;user-select:none;transition:.15s;}
+  .chip:hover{border-color:var(--accent);color:var(--accent);}
+  .chip.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .owner-chip.active{background:var(--accent);border-color:var(--accent);}
+  .toggle-all-btn{font-size:12.5px;color:var(--accent);background:var(--accent-soft);border:1px solid transparent;border-radius:20px;padding:7px 14px;cursor:pointer;font-weight:600;white-space:nowrap;}
+  .toggle-all-btn:hover{border-color:var(--accent);}
+
+  /* task cards */
+  .flow .box{border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.55;color:var(--ink);font-weight:500;white-space:pre-line;}
+  .flow .box .lbl{display:block;font-size:10px;font-weight:800;color:var(--accent);letter-spacing:.03em;margin-bottom:5px;text-transform:uppercase;}
+  .flow .last{background:#eef3ee;border:1px solid #d9e5da;}
+  .flow .next{
+    background:#e9f0fc;
+    border:2px solid var(--accent);
+    box-shadow:0 3px 10px rgba(59,85,128,.16);
+    padding:14px 16px;
+    font-size:13.5px;
+    font-weight:600;
+    position:relative;
+  }
+  .flow .next .lbl{font-size:11px;color:var(--accent);letter-spacing:.04em;}
+  .flow .next .lbl::before{content:"● ";font-size:9px;}
+  .flow .arrow{display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:14px;}
+  .empty{color:var(--faint);font-style:italic;}
+  mark{background:#fde9a8;color:inherit;border-radius:3px;padding:0 1px;}
+  .cell-link{color:var(--accent);text-decoration:underline;text-decoration-color:rgba(59,85,128,.35);text-underline-offset:2px;word-break:break-all;}
+  .cell-link:hover{text-decoration-color:var(--accent);}
+
+  .dept-section{margin-bottom:32px;}
+  .dept-section:last-child{margin-bottom:0;}
+  .dept-header{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--ink);cursor:pointer;list-style:none;user-select:none;}
+  .dept-header::-webkit-details-marker{display:none;}
+  .dept-header .dept-chevron{font-size:11px;color:var(--faint);transition:transform .15s;}
+  .dept-section[open] .dept-header .dept-chevron{transform:rotate(90deg);}
+  .dept-section:not([open]) .dept-header{margin-bottom:0;}
+  .dept-header .dept-name{font-size:17px;font-weight:800;color:var(--ink);letter-spacing:-0.01em;}
+  .dept-header .dept-count{font-size:12px;color:var(--sub);font-weight:600;background:#f0f1f3;padding:2px 10px;border-radius:12px;}
+  .dept-expand-btn{margin-left:auto;font-size:11.5px;color:var(--accent);background:var(--accent-soft);border:1px solid transparent;border-radius:20px;padding:5px 12px;cursor:pointer;font-weight:600;white-space:nowrap;}
+  .dept-expand-btn:hover{border-color:var(--accent);}
+  .dept-header:hover .dept-name{color:var(--accent);}
+
+  .owner-group{margin-bottom:14px;}
+  .owner-group:last-child{margin-bottom:0;}
+  .owner-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-left:2px;}
+  .owner-header .owner-name{font-size:13px;font-weight:700;color:var(--accent);}
+  .owner-header .owner-count{font-size:11px;color:var(--faint);font-weight:600;}
+  .owner-header::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  .task{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden;}
+  .task[open]{padding-bottom:4px;}
+  .task summary{list-style:none;cursor:pointer;padding:13px 16px;}
+  .task summary::-webkit-details-marker{display:none;}
+  .task-top{display:grid;grid-template-columns:96px minmax(0,1fr) 90px 118px 14px;align-items:center;column-gap:10px;}
+  .task-top .chevron{font-size:11px;color:var(--faint);transition:transform .15s;justify-self:end;}
+  .task[open] .chevron{transform:rotate(90deg);}
+  .tag{font-size:11px;font-weight:700;color:var(--sub);background:#f0f1f3;padding:3px 9px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;justify-self:center;max-width:100%;}
+  .title{font-size:15.5px;font-weight:800;color:var(--ink);letter-spacing:-0.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .due{font-size:11.5px;color:var(--faint);white-space:nowrap;text-align:left;justify-self:start;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  .due.soon{color:var(--wait);font-weight:700;}
+  .due.overdue{color:var(--hold);font-weight:700;}
+  .status{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;text-align:center;justify-self:center;white-space:nowrap;}
+  .status.진행중{color:var(--prog);background:#eaf0f9;}
+  .status.완료{color:var(--ok);background:#eef0f2;}
+  .status.확인중{color:var(--wait);background:#faf3e6;}
+  .status.예정{color:var(--plan);background:#eaf3ef;}
+  .status.보류{color:var(--hold);background:#fbecec;}
+
+  .task-body{padding:0 16px 16px;}
+  .desc{font-size:14px;color:#3f4654;font-weight:500;margin:0 0 14px;line-height:1.7;white-space:pre-line;padding:12px 14px;background:#fafbfc;border-left:3px solid var(--accent);border-radius:0 8px 8px 0;}
+
+  .state-msg{text-align:center;color:var(--sub);font-size:13px;padding:60px 0;}
+  .state-msg.error{color:var(--hold);}
+
+  /* summary view (요약보기) - 담당자별 섹션 + 카드 보기의 flow 박스 비율을 그대로 재사용한 그리드 */
+  .summary-owner-section{margin-bottom:24px;}
+  .summary-owner-section:last-child{margin-bottom:0;}
+  .summary-owner-header{display:flex;align-items:center;gap:9px;margin-bottom:11px;padding-bottom:8px;border-bottom:1px solid var(--line);}
+  .summary-owner-name{font-size:14.5px;font-weight:800;color:var(--ink);}
+  .summary-owner-dept{font-size:10.5px;font-weight:700;color:var(--sub);background:#f0f1f3;padding:3px 9px;
+        border-radius:20px;letter-spacing:.02em;white-space:nowrap;}
+  .summary-owner-count{font-size:11.5px;color:var(--faint);margin-left:auto;}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
+  .summary-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px 16px;}
+  .summary-card-title{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:12px;line-height:1.4;}
+
+  /* 월간 완료업무 모아보기 */
+  .monthly-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+  .monthly-toolbar .monthly-label{font-size:12.5px;color:var(--faint);font-weight:700;}
+  .monthly-select{font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;}
+  .monthly-count{font-size:12px;color:var(--sub);margin-left:auto;}
+  .monthly-dept-section{margin-bottom:26px;}
+  .monthly-dept-section:last-child{margin-bottom:0;}
+  .monthly-dept-title{font-size:15.5px;font-weight:800;color:var(--ink);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--ink);}
+  .monthly-owner-block{margin-bottom:16px;}
+  .monthly-owner-block:last-child{margin-bottom:0;}
+  .monthly-owner-name{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;}
+  .monthly-item{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin-bottom:8px;}
+  .monthly-item:last-child{margin-bottom:0;}
+  .monthly-item-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+  .monthly-item-title{font-size:13.5px;font-weight:700;color:var(--ink);}
+  .monthly-week-tag{font-size:10.5px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:2px 9px;border-radius:20px;white-space:nowrap;}
+  .monthly-item-text{font-size:13px;color:#3f4654;line-height:1.6;white-space:pre-line;}
+
+
+  @media(max-width:720px){
+    .kpis{grid-template-columns:repeat(3,1fr);}
+    .flow{grid-template-columns:1fr;}
+    .flow .arrow{transform:rotate(90deg);padding:4px 0;}
+    .head-row{flex-direction:column;align-items:flex-start;}
+    .head-right{align-items:flex-start;}
+    .task-top{
+      display:grid;
+      grid-template-columns:1fr auto;
+      grid-template-areas:"tag chevron" "title title" "status due";
+      row-gap:6px;column-gap:8px;
+    }
+    .task-top .tag{grid-area:tag;justify-self:start;}
+    .task-top .chevron{grid-area:chevron;justify-self:end;}
+    .task-top .title{grid-area:title;white-space:normal;overflow:visible;text-overflow:clip;}
+    .task-top .status{grid-area:status;justify-self:center;}
+    .task-top .due{grid-area:due;justify-self:end;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="now-bar" id="now-bar"></div>
+
+  <div class="head-row">
+    <div>
+      <div class="title-row">
+        <h1>경영지원실 주간업무 대시보드</h1>
+        <span class="week-tag" id="week-tag">2026년 7월 2주차</span>
+        <span class="archive-badge" id="archive-badge">지난 기록 · 읽기전용</span>
+      </div>
+    </div>
+    <div class="head-right">
+      <select class="week-select" id="week-select" onchange="onWeekChange()"></select>
+      <div class="sync-row">
+        <span class="sync-time" id="sync-time"></span>
+        <button class="refresh-btn" id="monthly-view-btn" onclick="toggleMonthlyView()">월간 완료업무</button>
+        <button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()">↻ 새로고침</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi total"><div class="num" id="k-total">-</div><div class="lbl">전체 업무</div></div>
+    <div class="kpi"><div class="num" id="k-done">-</div><div class="lbl">완료</div></div>
+    <div class="kpi prog"><div class="num" id="k-prog">-</div><div class="lbl">진행중</div></div>
+    <div class="kpi wait"><div class="num" id="k-wait">-</div><div class="lbl">예정·확인중</div></div>
+    <div class="kpi overdue"><div class="num" id="k-overdue">-</div><div class="lbl">마감 지남</div></div>
+    <div class="kpi"><div class="num" id="k-empty">-</div><div class="lbl">이번주 업무 미입력</div></div>
+  </div>
+
+  <div class="search-row">
+    <input type="text" class="search-input" id="search-input" placeholder="업무명 또는 담당자로 검색..." oninput="onSearchInput()">
+    <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+  </div>
+
+  <div class="filters-row">
+    <div class="filter-line">
+      <span class="filter-label">상태</span>
+      <div class="filters" id="filters"></div>
+      <button class="toggle-all-btn" id="toggle-dept-btn" onclick="toggleAllDepts()">부서 전체 접기</button>
+      <button class="toggle-all-btn" id="toggle-all-btn" onclick="toggleAll()">전체 펼치기</button>
+      <button class="toggle-all-btn" id="view-toggle-btn" onclick="toggleViewMode()">요약 보기</button>
+    </div>
+    <div class="filter-line">
+      <span class="filter-label">담당자</span>
+      <div class="filters" id="owner-filters"></div>
+    </div>
+  </div>
+
+  <div id="list">
+    <div class="state-msg" id="initial-msg">스프레드시트에서 데이터를 불러오는 중...</div>
+  </div>
+
+</div>
+
+<script>
+// ===== 구글 스프레드시트 연동 설정 =====
+const SHEET_ID = '1nLHE0Y6tJftFsJlU9czhd-VWG-HbXEk3ndZslar_jbQ';
+const HEADER_RANGE = 'B7:J200'; // B7:J7이 헤더, 8행부터 데이터 (I열 "이번주 업무", 그리고 "다음주 업무" 열은 삭제되어 더 이상 존재하지 않음)
+const WEEK_LABEL_CELL = 'B1'; // 이 셀에 "2026년 7월 3주차"처럼 입력하면 자동 반영됨
+const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5분마다 자동 새로고침 (최신 주차에서만 동작)
+
+// ===== 주차 탭 자동 탐색 설정 =====
+// 스프레드시트 안에 "N월 M주" 형식(예: "7월 1주", "8월 2주")으로 탭을 계속 만들어두면,
+// gid를 몰라도, 코드를 따로 수정하지 않아도 아래 로직이 자동으로 그 탭들을 찾아서 반영합니다.
+// ⚠ "완료 업무"를 월 단위로 누적하려면 B1 셀은 반드시 "YYYY년 M월 N주차"처럼 "N월"이 들어가게 입력해주세요.
+const MONTH_SCAN_BACK = 2;     // 과거 몇 개월까지 주차 탭을 찾아볼지
+const MONTH_SCAN_FORWARD = 4;  // 미래 몇 개월까지 미리 찾아볼지 (탭이 없으면 그냥 건너뜀 → 비용 없음)
+const MAX_WEEKS_PER_MONTH = 6; // 한 달에 최대 몇 주차까지 있을 수 있는지
+
+function weekSheetName(month, week){
+  return `${month}월 ${week}주`;
+}
+
+// 자동 탐색이 실패했을 때(네트워크 오류 등)를 대비한 최소 안전망
+const FALLBACK_WEEKS = [
+  { gid: '1682390790', label: '2026년 7월 3주차 (이번 주)' },
+  { gid: '0', label: '2026년 7월 2주차' },
+  { gid: '1256845414', label: '2026년 7월 1주차' },
+];
+
+let WEEKS = FALLBACK_WEEKS.slice();
+let CURRENT_WEEK_INDEX = 0;
+
+// 시트를 gviz 쿼리로 불러올 때 쓸 파라미터. sheet 이름 기반(자동 탐색) 또는 gid 기반(안전망) 둘 다 지원
+function weekParam(w){
+  return (w && w.sheet !== undefined)
+    ? `sheet=${encodeURIComponent(w.sheet)}`
+    : `gid=${w.gid}`;
+}
+
+// 주어진 이름의 탭이 실제로 존재하는지 확인하고, 존재하면 B1(주차 라벨)까지 함께 읽어온다.
+async function probeWeekSheet(sheetName){
+  try{
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}&range=${WEEK_LABEL_CELL}`;
+    const res = await fetch(url);
+    if(!res.ok) return null;
+    const text = await res.text();
+    const jsonStart = text.indexOf('{');
+    const jsonEnd = text.lastIndexOf('}');
+    if(jsonStart === -1 || jsonEnd === -1) return null;
+    const json = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
+    if(json.status === 'error') return null; // 해당 이름의 탭이 존재하지 않음
+    const cell = json.table && json.table.rows && json.table.rows[0] && json.table.rows[0].c && json.table.rows[0].c[0];
+    const label = cell ? String(cell.v ?? '').trim() : '';
+    return { sheet: sheetName, label: label || sheetName };
+  }catch(e){
+    return null;
+  }
+}
+
+// 스프레드시트 안의 "N월 M주" 탭들을 자동으로 찾아서 최신순으로 정렬한 목록을 만든다.
+async function discoverWeeks(){
+  const now = new Date();
+  const candidates = [];
+  for(let offset = -MONTH_SCAN_BACK; offset <= MONTH_SCAN_FORWARD; offset++){
+    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    const sortBase = d.getFullYear() * 12 + d.getMonth(); // 연도까지 고려한 정렬 기준값
+    const month = d.getMonth() + 1;
+    for(let week = 1; week <= MAX_WEEKS_PER_MONTH; week++){
+      candidates.push({ name: weekSheetName(month, week), sortBase, week });
+    }
+  }
+
+  const probed = await Promise.all(candidates.map(c => probeWeekSheet(c.name)));
+
+  const found = [];
+  probed.forEach((r, i)=>{
+    if(r) found.push({ sheet: r.sheet, label: r.label, sortBase: candidates[i].sortBase, week: candidates[i].week });
+  });
+
+  // 이름 기준 중복 제거 후 최신순(연/월 desc, 주차 desc) 정렬
+  const byName = new Map();
+  found.forEach(f => { if(!byName.has(f.sheet)) byName.set(f.sheet, f); });
+  const list = Array.from(byName.values()).sort((a, b)=>
+    (b.sortBase - a.sortBase) || (b.week - a.week)
+  );
+
+  return list.map(({sheet, label}) => ({ sheet, label }));
+}
+
+async function fetchWeekLabel(w){
+  try{
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&${weekParam(w)}&range=${WEEK_LABEL_CELL}`;
+    const res = await fetch(url);
+    const text = await res.text();
+    const jsonStart = text.indexOf('{');
+    const jsonEnd = text.lastIndexOf('}');
+    const json = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
+    const cell = json.table.rows && json.table.rows[0] && json.table.rows[0].c && json.table.rows[0].c[0];
+    const label = cell ? String(cell.v ?? '').trim() : '';
+    if(label){
+      document.getElementById('week-tag').textContent = label;
+    }
+  }catch(err){
+    console.error('주차 라벨을 불러오지 못했습니다:', err);
+    // 실패해도 기존 라벨을 그대로 유지
+  }
+}
+
+let tasks = [];
+let activeStatus = "전체";
+let activeOwner = "전체";
+let viewMode = "card"; // 'card' | 'summary'
+let searchText = "";
+let searchDebounceTimer = null;
+let collapsedDepts = new Set();
+
+// ===== 월간 완료업무 모아보기 =====
+let monthlyViewActive = false;
+let selectedMonthKey = null; // 예: '2026년 7월'
+const monthlyEntriesCache = new Map(); // monthKey -> Promise<entries[]>
+
+function updateNowBar(){
+  const now = new Date();
+  const weekdays = ['일','월','화','수','목','금','토'];
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+  const w = weekdays[now.getDay()];
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  const el = document.getElementById('now-bar');
+  if(el){
+    el.innerHTML = `<span class="now-date">${y}년 ${m}월 ${d}일 (${w})</span><span class="now-dot">·</span><span class="now-time">${hh}:${mm}:${ss}</span>`;
+  }
+}
+updateNowBar();
+setInterval(updateNowBar, 1000);
+
+// 페이지 로드 시 스프레드시트의 "N월 M주" 탭들을 자동으로 찾아 주차 목록을 구성한다.
+async function initWeekSelect(){
+  const sel = document.getElementById('week-select');
+  sel.innerHTML = `<option>주차 탭 확인 중...</option>`;
+  try{
+    const discovered = await discoverWeeks();
+    if(discovered.length > 0){
+      WEEKS = discovered;
+    }
+  }catch(e){
+    console.error('주차 탭 자동 탐색에 실패해 기본 목록을 사용합니다:', e);
+  }
+  CURRENT_WEEK_INDEX = 0;
+
+  sel.innerHTML = "";
+  WEEKS.forEach((w, i)=>{
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = w.label;
+    sel.appendChild(opt);
+  });
+  sel.value = String(CURRENT_WEEK_INDEX);
+}
+
+function onWeekChange(){
+  const sel = document.getElementById('week-select');
+  CURRENT_WEEK_INDEX = Number(sel.value);
+  // 주차를 바꾸면 검색/필터 상태는 초기화해서 혼동을 방지
+  activeStatus = "전체";
+  activeOwner = "전체";
+  searchText = "";
+  collapsedDepts = new Set();
+  const input = document.getElementById('search-input');
+  if(input) input.value = "";
+  loadAndRender();
+}
+
+function currentWeek(){
+  return WEEKS[CURRENT_WEEK_INDEX];
+}
+
+function isArchiveWeek(){
+  return CURRENT_WEEK_INDEX !== 0;
+}
+
+// "2026년 7월 3주차 (이번 주)" -> "2026년 7월"
+function monthKeyOf(label){
+  const m = String(label || '').match(/^(\d{4}년\s*\d{1,2}월)/);
+  return m ? m[1] : String(label || '').trim();
+}
+
+// "2026년 7월 3주차 (이번 주)" -> "3주차"
+function weekTagOf(label){
+  const m = String(label || '').match(/(\d+주차)/);
+  return m ? m[1] : String(label || '').trim();
+}
+
+// 현재 선택된 주차와 같은 달에 속한 주차들을 [현재(최신) ... 그 달의 첫 주(과거)] 순서로 반환
+function weeksInCurrentMonth(){
+  const mKey = monthKeyOf(WEEKS[CURRENT_WEEK_INDEX].label);
+  return WEEKS.filter(w => monthKeyOf(w.label) === mKey);
+}
+
+// 같은 달의 이전 주차들을 모두 불러와 "완료 업무"를 업무 단위로 누적 병합한다.
+// (부서+담당자+업무명이 같으면 같은 업무로 보고 주차별 완료 내역을 이어붙임)
+async function fetchMonthlyCompleted(baseTasks){
+  const monthWeeks = weeksInCurrentMonth();      // [현재, ..., 그 달 첫 주]
+  const olderWeeks = monthWeeks.slice(1);        // 현재 주는 baseTasks로 이미 갖고 있으므로 제외
+  const chronological = olderWeeks.slice().reverse(); // 과거 -> 최신 순
+
+  const olderResults = await Promise.all(
+    chronological.map(w => fetchTasksFromSheet(w).catch(()=>[]))
+  );
+
+  const map = new Map(); // key -> [{tag, text}, ...] (과거 -> 최신 순)
+  const keyOf = (t)=> `${t.dept}|||${t.owner}|||${t.title}`;
+
+  chronological.forEach((w, idx)=>{
+    const tag = weekTagOf(w.label);
+    (olderResults[idx] || []).forEach(t=>{
+      if(!t.last) return;
+      const key = keyOf(t);
+      if(!map.has(key)) map.set(key, []);
+      map.get(key).push({tag, text: t.last});
+    });
+  });
+
+  // 현재(가장 최신) 주차는 맨 마지막에 추가
+  const curTag = weekTagOf(WEEKS[CURRENT_WEEK_INDEX].label);
+  baseTasks.forEach(t=>{
+    if(!t.last) return;
+    const key = keyOf(t);
+    if(!map.has(key)) map.set(key, []);
+    map.get(key).push({tag: curTag, text: t.last});
+  });
+
+  return {map, keyOf, weekCount: monthWeeks.length};
+}
+
+async function fetchTasksFromSheet(w){
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&${weekParam(w)}&range=${HEADER_RANGE}&headers=1`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('스프레드시트 응답 오류 (' + res.status + ')');
+  const text = await res.text();
+  const jsonStart = text.indexOf('{');
+  const jsonEnd = text.lastIndexOf('}');
+  const json = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
+
+  const rows = json.table.rows || [];
+  const result = [];
+
+  rows.forEach(r=>{
+    const c = r.c;
+    const get = (i)=>{
+      if(!c || !c[i]) return '';
+      const cell = c[i];
+      return (cell.f !== undefined && cell.f !== null && cell.f !== '') ? cell.f : (cell.v ?? '');
+    };
+    // 열 순서(I열 "이번주 업무", "다음주 업무" 삭제 후 기준): 부서, 업무구분, 담당자, 업무명, 업무 설명, 세부내용, 완료 업무, 상태, 마감일
+    // ※ "세부내용" 열의 내용을 그대로 "이번주 업무" 박스에 반영합니다.
+    // ※ "완료 업무"(구 지난주 업무) 열은 loadAndRender()에서 같은 달의 다른 주차 시트와 합쳐 월 누적으로 반영됩니다.
+    const dept   = String(get(0)).trim();
+    const cat    = String(get(1)).trim();
+    const owner  = String(get(2)).trim();
+    const title  = String(get(3)).trim();
+    const descMain   = String(get(4)).trim();
+    const descDetail = String(get(5)).trim();
+    const last   = String(get(6)).trim();
+    const status = String(get(7)).trim();
+    const due    = String(get(8)).trim();
+
+    if(!title) return; // 업무명이 없는 빈 행은 건너뜀
+
+    const cleanText = (s)=> s
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .join('\n');
+
+    const desc = cleanText(descMain);
+    const next = cleanText(descDetail); // 세부내용 → 이번주 업무로 반영
+    result.push({dept, cat, owner, title, desc, last: cleanText(last), next, status, due});
+  });
+
+  return result;
+}
+
+function renderKpis(){
+  document.getElementById('k-total').textContent = tasks.length;
+  document.getElementById('k-done').textContent = tasks.filter(t=>t.status==='완료').length;
+  document.getElementById('k-prog').textContent = tasks.filter(t=>t.status==='진행중').length;
+  document.getElementById('k-wait').textContent = tasks.filter(t=>t.status==='예정'||t.status==='확인중').length;
+  document.getElementById('k-overdue').textContent = tasks.filter(t=>dueUrgency(t).cls==='overdue').length;
+  document.getElementById('k-empty').textContent = tasks.filter(t=>!t.next).length;
+}
+
+function renderFilters(){
+  const statuses = ["전체", ...Array.from(new Set(tasks.map(t=>t.status).filter(Boolean)))];
+  const filterBar = document.getElementById('filters');
+  filterBar.innerHTML = "";
+  statuses.forEach(s=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (s===activeStatus ? ' active' : '');
+    chip.textContent = s + (s!=="전체" ? ` (${tasks.filter(t=>t.status===s).length})` : ` (${tasks.length})`);
+    chip.onclick = ()=>{ activeStatus = s; renderFilters(); renderOwnerFilters(); renderList(); };
+    filterBar.appendChild(chip);
+  });
+}
+
+function renderOwnerFilters(){
+  // 담당자 목록은 현재 선택된 상태 필터를 반영해 등장 순서대로 구성
+  const statusScoped = tasks.filter(t => activeStatus==="전체" || t.status===activeStatus);
+  const owners = ["전체", ...Array.from(new Set(statusScoped.map(t=>t.owner || '미지정').filter(Boolean)))];
+  const bar = document.getElementById('owner-filters');
+  bar.innerHTML = "";
+
+  // 이전에 선택한 담당자가 더 이상 목록에 없으면 전체로 리셋
+  if(!owners.includes(activeOwner)) activeOwner = "전체";
+
+  owners.forEach(o=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip owner-chip' + (o===activeOwner ? ' active' : '');
+    const count = o==="전체" ? statusScoped.length : statusScoped.filter(t=>(t.owner || '미지정')===o).length;
+    chip.textContent = o + ` (${count})`;
+    chip.onclick = ()=>{ activeOwner = o; renderOwnerFilters(); renderList(); };
+    bar.appendChild(chip);
+  });
+}
+
+function isDateLikeDue(due){
+  if(!due) return false;
+  // YYYY-MM-DD, YYYY.MM.DD, YYYY/MM/DD, M/D, MM-DD 등 날짜 형식만 인정
+  return /^\d{4}[-.\/]\d{1,2}[-.\/]\d{1,2}$/.test(due) || /^\d{1,2}[-.\/]\d{1,2}$/.test(due);
+}
+
+function formatDue(due){
+  if(!due) return '마감 -';
+  return isDateLikeDue(due) ? ('마감 ' + due) : due;
+}
+
+function parseDueDate(due){
+  if(!due) return null;
+  let m = due.match(/^(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})$/);
+  if(m){
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  }
+  m = due.match(/^(\d{1,2})[-.\/](\d{1,2})$/);
+  if(m){
+    const now = new Date();
+    return new Date(now.getFullYear(), Number(m[1]) - 1, Number(m[2]));
+  }
+  return null;
+}
+
+// 마감 임박/지연 여부를 계산. 완료 업무는 강조하지 않음.
+function dueUrgency(t){
+  if(t.status === '완료') return { cls:'', suffix:'' };
+  const d = parseDueDate(t.due);
+  if(!d) return { cls:'', suffix:'' };
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const diffDays = Math.round((d - today) / 86400000);
+  if(diffDays < 0) return { cls:'overdue', suffix:` · 지연 ${Math.abs(diffDays)}일` };
+  if(diffDays === 0) return { cls:'soon', suffix:' · D-day' };
+  if(diffDays <= 3) return { cls:'soon', suffix:` · D-${diffDays}` };
+  return { cls:'', suffix:'' };
+}
+
+function escapeRegExp(s){
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlight(text, term){
+  if(!term) return text;
+  try{
+    const re = new RegExp('(' + escapeRegExp(term) + ')', 'gi');
+    return text.replace(re, '<mark>$1</mark>');
+  }catch(e){
+    return text;
+  }
+}
+
+// 텍스트 안의 URL(http/https, www.)을 자동으로 감지해서 클릭 가능한 링크로 변환
+function linkify(text){
+  if(!text) return text;
+  const urlRe = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)/g;
+  return text.replace(urlRe, (match)=>{
+    // 문장 끝에 자주 붙는 문장부호/괄호는 링크 밖으로 빼줌
+    let trail = '';
+    const m = match.match(/[.,)\]}!?;:'"]+$/);
+    if(m){
+      trail = m[0];
+      match = match.slice(0, -trail.length);
+    }
+    if(!match) return match + trail;
+    const href = /^https?:\/\//i.test(match) ? match : ('https://' + match);
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="cell-link" onclick="event.stopPropagation()">${match}</a>${trail}`;
+  });
+}
+
+function matchesSearch(t, term){
+  if(!term) return true;
+  const q = term.toLowerCase();
+  return t.title.toLowerCase().includes(q) || (t.owner || '').toLowerCase().includes(q);
+}
+
+function onSearchInput(){
+  const val = document.getElementById('search-input').value;
+  document.getElementById('search-clear').classList.toggle('show', val.length > 0);
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(()=>{
+    searchText = val.trim();
+    if(monthlyViewActive){ renderMonthlyView(); } else { renderList(); }
+  }, 150);
+}
+
+function clearSearch(){
+  const input = document.getElementById('search-input');
+  input.value = "";
+  searchText = "";
+  document.getElementById('search-clear').classList.remove('show');
+  input.focus();
+  if(monthlyViewActive){ renderMonthlyView(); } else { renderList(); }
+}
+
+function getFilteredTasks(){
+  const term = searchText;
+  return tasks.filter(t=>
+    (activeStatus==="전체" || t.status===activeStatus) &&
+    (activeOwner==="전체" || (t.owner || '미지정')===activeOwner) &&
+    matchesSearch(t, term)
+  );
+}
+
+// 부서 정렬 순서 (DEPT_ORDER에 지정된 부서 우선, 나머지는 등장 순서대로 뒤에 붙임)
+const DEPT_ORDER = ['인사', '총무'];
+function sortedDeptKeys(deptGroups){
+  return Array.from(deptGroups.keys()).sort((a, b)=>{
+    const ia = DEPT_ORDER.indexOf(a);
+    const ib = DEPT_ORDER.indexOf(b);
+    if(ia === -1 && ib === -1) return 0;
+    if(ia === -1) return 1;
+    if(ib === -1) return -1;
+    return ia - ib;
+  });
+}
+
+function renderList(){
+  if(viewMode === 'summary'){
+    renderSummaryView();
+  }else{
+    renderCardView();
+  }
+}
+
+function renderCardView(){
+  const list = document.getElementById('list');
+  list.innerHTML = "";
+  const term = searchText;
+  const shown = getFilteredTasks();
+
+  if(shown.length === 0){
+    list.innerHTML = `<div class="state-msg">${term ? '검색 결과가 없습니다.' : '표시할 업무가 없습니다.'}</div>`;
+    return;
+  }
+
+  // 부서별로 그룹화. DEPT_ORDER에 지정된 순서 우선, 나머지는 등장 순서대로 뒤에 붙임
+  const deptGroups = new Map();
+  shown.forEach(t=>{
+    const key = t.dept || '기타';
+    if(!deptGroups.has(key)) deptGroups.set(key, []);
+    deptGroups.get(key).push(t);
+  });
+
+  const deptKeys = sortedDeptKeys(deptGroups);
+
+  deptKeys.forEach(deptKey=>{
+    const items = deptGroups.get(deptKey);
+
+    const section = document.createElement('details');
+    section.className = 'dept-section';
+    const hasMatch = term && items.some(t=> t.title.toLowerCase().includes(term.toLowerCase()) || (t.owner||'').toLowerCase().includes(term.toLowerCase()));
+    section.open = hasMatch ? true : !collapsedDepts.has(deptKey);
+    const summary = document.createElement('summary');
+    summary.className = 'dept-header';
+    summary.innerHTML = `
+        <span class="dept-chevron">▶</span>
+        <span class="dept-name">${deptKey}</span>
+        <span class="dept-count">${items.length}건</span>
+        <button type="button" class="dept-expand-btn">${deptKey} 전체 펼치기</button>`;
+    summary.querySelector('.dept-expand-btn').addEventListener('click', (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      toggleDeptTasks(section, deptKey, e.currentTarget);
+    });
+    section.appendChild(summary);
+
+    const deptBody = document.createElement('div');
+    deptBody.className = 'dept-body';
+    section.appendChild(deptBody);
+
+    // 담당자별로 그룹화 (등장 순서 유지)
+    const ownerGroups = new Map();
+    items.forEach(t=>{
+      const key = t.owner || '미지정';
+      if(!ownerGroups.has(key)) ownerGroups.set(key, []);
+      ownerGroups.get(key).push(t);
+    });
+
+    ownerGroups.forEach((ownerItems, ownerName)=>{
+      const ownerBlock = document.createElement('div');
+      ownerBlock.className = 'owner-group';
+      ownerBlock.innerHTML = `
+        <div class="owner-header">
+          <span class="owner-name">${highlight(ownerName, term)}</span>
+          <span class="owner-count">${ownerItems.length}건</span>
+        </div>`;
+
+      ownerItems.forEach(t=>{
+        const el = document.createElement('details');
+        el.className = 'task';
+        // 검색어로 찾은 카드는 펼쳐서 바로 보이게 함
+        if(term && (t.title.toLowerCase().includes(term.toLowerCase()) || (t.owner||'').toLowerCase().includes(term.toLowerCase()))){
+          el.open = true;
+        }
+        const statusClass = (t.status || '').replace(/[^\p{L}\p{N}]/gu, '');
+        el.innerHTML = `
+          <summary>
+            <div class="task-top">
+              <span class="tag">${t.cat}</span>
+              <span class="title">${highlight(t.title, term)}</span>
+              <span class="status ${statusClass}">${t.status || '-'}</span>
+              <span class="due ${dueUrgency(t).cls}">${formatDue(t.due)}${dueUrgency(t).suffix}</span>
+              <span class="chevron">▶</span>
+            </div>
+          </summary>
+          <div class="task-body">
+            ${t.desc ? `<div class="desc">${linkify(t.desc)}</div>` : ""}
+            <div class="flow">
+              <div class="box last"><span class="lbl">완료 업무</span>${t.last ? linkify(t.last) : '<span class="empty">이번 달 완료 업무 없음</span>'}</div>
+              <div class="arrow">→</div>
+              <div class="box next"><span class="lbl">이번주 업무</span>${t.next ? linkify(t.next) : '<span class="empty">이번주 업무 미입력</span>'}</div>
+            </div>
+          </div>`;
+        ownerBlock.appendChild(el);
+      });
+
+      deptBody.appendChild(ownerBlock);
+    });
+
+    list.appendChild(section);
+  });
+
+  updateToggleAllBtn();
+  updateToggleDeptBtn();
+}
+
+function renderSummaryView(){
+  const list = document.getElementById('list');
+  list.innerHTML = "";
+  const term = searchText;
+  const shown = getFilteredTasks();
+
+  if(shown.length === 0){
+    list.innerHTML = `<div class="state-msg">${term ? '검색 결과가 없습니다.' : '표시할 업무가 없습니다.'}</div>`;
+    return;
+  }
+
+  // 카드 보기와 동일하게 부서 → 담당자 순서를 유지
+  const deptGroups = new Map();
+  shown.forEach(t=>{
+    const key = t.dept || '기타';
+    if(!deptGroups.has(key)) deptGroups.set(key, []);
+    deptGroups.get(key).push(t);
+  });
+  const deptKeys = sortedDeptKeys(deptGroups);
+
+  const box = (label, text, emptyLabel, cls)=>
+    `<div class="box ${cls}"><span class="lbl">${label}</span>${text ? linkify(highlight(text, term)) : `<span class="empty">${emptyLabel}</span>`}</div>`;
+
+  const cardHtml = (t)=>`
+      <div class="summary-card">
+        <div class="summary-card-title">${highlight(t.title, term)}</div>
+        <div class="flow">
+          ${box('완료 업무', t.last, '이번 달 완료 업무 없음', 'last')}
+          <div class="arrow">→</div>
+          ${box('이번주 업무', t.next, '이번주 업무 미입력', 'next')}
+        </div>
+      </div>`;
+
+  const sections = [];
+  deptKeys.forEach(deptKey=>{
+    const items = deptGroups.get(deptKey);
+    const ownerGroups = new Map();
+    items.forEach(t=>{
+      const key = t.owner || '미지정';
+      if(!ownerGroups.has(key)) ownerGroups.set(key, []);
+      ownerGroups.get(key).push(t);
+    });
+    ownerGroups.forEach((ownerItems, ownerName)=>{
+      sections.push(`
+        <div class="summary-owner-section">
+          <div class="summary-owner-header">
+            <span class="summary-owner-name">${highlight(ownerName, term)}</span>
+            <span class="summary-owner-dept">${deptKey}</span>
+            <span class="summary-owner-count">${ownerItems.length}건</span>
+          </div>
+          <div class="summary-grid">${ownerItems.map(cardHtml).join('')}</div>
+        </div>`);
+    });
+  });
+
+  list.innerHTML = sections.join('');
+}
+
+// ===== 월간 완료업무 모아보기 =====
+
+// 발견된 주차들 중에서 서로 다른 "달"만 최신순으로 추려낸다.
+function availableMonths(){
+  const seen = new Set();
+  const months = [];
+  WEEKS.forEach(w=>{
+    const mk = monthKeyOf(w.label);
+    if(mk && !seen.has(mk)){ seen.add(mk); months.push(mk); }
+  });
+  return months;
+}
+
+function weeksOfMonth(monthKey){
+  return WEEKS.filter(w => monthKeyOf(w.label) === monthKey);
+}
+
+// 특정 달에 속한 모든 주차 탭을 불러와 H열(완료 업무)이 채워진 항목을 모두 모은다.
+// (같은 업무라도 병합하지 않고, 주차별로 있는 그대로 나열함)
+function getMonthlyCompletedEntries(monthKey){
+  if(monthlyEntriesCache.has(monthKey)) return monthlyEntriesCache.get(monthKey);
+
+  const weeks = weeksOfMonth(monthKey); // 최신 주 -> 과거 주 순
+  const promise = Promise.all(
+    weeks.map(w => fetchTasksFromSheet(w).catch(()=>[]).then(list => ({ w, list })))
+  ).then(results=>{
+    const entries = [];
+    results.forEach(({w, list})=>{
+      const tag = weekTagOf(w.label);
+      list.forEach(t=>{
+        if(!t.last) return;
+        entries.push({
+          dept: t.dept || '기타',
+          owner: t.owner || '미지정',
+          cat: t.cat,
+          title: t.title,
+          text: t.last,
+          weekTag: tag
+        });
+      });
+    });
+    return entries;
+  });
+
+  monthlyEntriesCache.set(monthKey, promise);
+  return promise;
+}
+
+async function renderMonthlyView(){
+  const list = document.getElementById('list');
+  const months = availableMonths();
+
+  if(months.length === 0){
+    list.innerHTML = `<div class="state-msg">불러올 수 있는 달이 없습니다.</div>`;
+    return;
+  }
+  if(!selectedMonthKey || !months.includes(selectedMonthKey)){
+    selectedMonthKey = months[0];
+  }
+
+  const loadingMonthKey = selectedMonthKey;
+  list.innerHTML = `<div class="state-msg">${selectedMonthKey} 완료 업무를 불러오는 중...</div>`;
+
+  let entries;
+  try{
+    entries = await getMonthlyCompletedEntries(selectedMonthKey);
+  }catch(err){
+    list.innerHTML = `<div class="state-msg error">완료 업무를 불러오지 못했습니다.<br><small>${err.message}</small></div>`;
+    console.error(err);
+    return;
+  }
+
+  // 불러오는 동안 다른 달로 바꿨거나 화면을 벗어났다면 그리지 않음
+  if(!monthlyViewActive || selectedMonthKey !== loadingMonthKey) return;
+
+  const term = searchText;
+  const filtered = term
+    ? entries.filter(e =>
+        e.title.toLowerCase().includes(term.toLowerCase()) ||
+        (e.owner||'').toLowerCase().includes(term.toLowerCase()))
+    : entries;
+
+  const toolbar = `
+    <div class="monthly-toolbar">
+      <span class="monthly-label">보기 기준 달</span>
+      <select class="monthly-select" id="monthly-month-select" onchange="onMonthlyMonthChange()"></select>
+      <span class="monthly-count">${filtered.length}건</span>
+    </div>`;
+
+  if(filtered.length === 0){
+    list.innerHTML = toolbar + `<div class="state-msg">${term ? '검색 결과가 없습니다.' : '이 달에 등록된 완료 업무가 없습니다.'}</div>`;
+    populateMonthlySelect(months);
+    return;
+  }
+
+  const deptGroups = new Map();
+  filtered.forEach(e=>{
+    if(!deptGroups.has(e.dept)) deptGroups.set(e.dept, []);
+    deptGroups.get(e.dept).push(e);
+  });
+  const deptKeys = sortedDeptKeys(deptGroups);
+
+  const sections = deptKeys.map(deptKey=>{
+    const items = deptGroups.get(deptKey);
+    const ownerGroups = new Map();
+    items.forEach(e=>{
+      if(!ownerGroups.has(e.owner)) ownerGroups.set(e.owner, []);
+      ownerGroups.get(e.owner).push(e);
+    });
+
+    const ownerBlocks = Array.from(ownerGroups.entries()).map(([ownerName, ownerItems])=>`
+        <div class="monthly-owner-block">
+          <div class="monthly-owner-name">${highlight(ownerName, term)} <span style="color:var(--faint);font-weight:600;">(${ownerItems.length}건)</span></div>
+          ${ownerItems.map(e=>`
+            <div class="monthly-item">
+              <div class="monthly-item-top">
+                <span class="monthly-week-tag">${e.weekTag}</span>
+                <span class="monthly-item-title">${highlight(e.title, term)}</span>
+              </div>
+              <div class="monthly-item-text">${linkify(highlight(e.text, term))}</div>
+            </div>`).join('')}
+        </div>`).join('');
+
+    return `
+      <div class="monthly-dept-section">
+        <div class="monthly-dept-title">${deptKey} <span style="color:var(--sub);font-weight:600;font-size:12px;">${items.length}건</span></div>
+        ${ownerBlocks}
+      </div>`;
+  }).join('');
+
+  list.innerHTML = toolbar + sections;
+  populateMonthlySelect(months);
+}
+
+function populateMonthlySelect(months){
+  const sel = document.getElementById('monthly-month-select');
+  if(!sel) return;
+  sel.innerHTML = "";
+  months.forEach(mk=>{
+    const opt = document.createElement('option');
+    opt.value = mk;
+    opt.textContent = mk;
+    sel.appendChild(opt);
+  });
+  sel.value = selectedMonthKey;
+}
+
+function onMonthlyMonthChange(){
+  const sel = document.getElementById('monthly-month-select');
+  if(!sel) return;
+  selectedMonthKey = sel.value;
+  renderMonthlyView();
+}
+
+function toggleMonthlyView(){
+  monthlyViewActive = !monthlyViewActive;
+  updateMonthlyViewBtn();
+  toggleUIForMonthlyView();
+  if(monthlyViewActive){
+    renderMonthlyView();
+  }else{
+    renderList();
+  }
+}
+
+function updateMonthlyViewBtn(){
+  const btn = document.getElementById('monthly-view-btn');
+  if(!btn) return;
+  btn.textContent = monthlyViewActive ? '← 업무 목록으로' : '월간 완료업무';
+}
+
+// 월간 완료업무 보기에서는 주차별 상태/담당자 필터, 카드 보기 관련 버튼들이 의미가 없으므로 숨긴다.
+function toggleUIForMonthlyView(){
+  const filtersRow = document.querySelector('.filters-row');
+  if(filtersRow) filtersRow.style.display = monthlyViewActive ? 'none' : '';
+}
+
+function toggleViewMode(){
+  viewMode = viewMode === 'summary' ? 'card' : 'summary';
+  updateViewToggleBtn();
+  renderList();
+}
+
+function updateViewToggleBtn(){
+  const btn = document.getElementById('view-toggle-btn');
+  if(!btn) return;
+  btn.textContent = viewMode === 'summary' ? '카드로 보기' : '요약 보기';
+  const deptBtn = document.getElementById('toggle-dept-btn');
+  const allBtn = document.getElementById('toggle-all-btn');
+  if(deptBtn) deptBtn.style.display = viewMode === 'summary' ? 'none' : '';
+  if(allBtn) allBtn.style.display = viewMode === 'summary' ? 'none' : '';
+}
+
+function updateSyncTime(){
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  if(isArchiveWeek()){
+    document.getElementById('sync-time').textContent = `아카이브 보기 · ${hh}:${mm} 조회`;
+  }else{
+    document.getElementById('sync-time').textContent = `마지막 업데이트 ${hh}:${mm}`;
+  }
+}
+
+let autoRefreshTimer = null;
+
+async function loadAndRender(){
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  document.getElementById('archive-badge').classList.toggle('show', isArchiveWeek());
+  try{
+    const w = currentWeek();
+    const [taskResult] = await Promise.all([fetchTasksFromSheet(w), fetchWeekLabel(w)]);
+    tasks = taskResult;
+
+    // 완료 업무를 같은 달의 다른 주차와 합쳐 월 누적으로 반영
+    const { map, keyOf } = await fetchMonthlyCompleted(tasks);
+    tasks.forEach(t=>{
+      const entries = map.get(keyOf(t)) || [];
+      t.last = entries.length > 1
+        ? entries.map(e => `[${e.tag}] ${e.text}`).join('\n')
+        : (entries[0] ? entries[0].text : '');
+    });
+
+    // 새로고침할 때마다 월간 완료업무 캐시도 갱신되도록 비워준다
+    monthlyEntriesCache.clear();
+
+    renderKpis();
+    renderFilters();
+    renderOwnerFilters();
+    if(monthlyViewActive){
+      renderMonthlyView();
+    }else{
+      renderList();
+    }
+    updateSyncTime();
+  }catch(err){
+    if(!monthlyViewActive){
+      document.getElementById('list').innerHTML =
+        `<div class="state-msg error">데이터를 불러오지 못했습니다.<br>스프레드시트 공유 설정("링크가 있는 모든 사용자" 뷰어)을 확인해 주세요.<br><small>${err.message}</small></div>`;
+    }
+    console.error(err);
+  }finally{
+    btn.disabled = false;
+  }
+
+  // 자동 새로고침은 "이번 주" 탭에서만 동작 (지난 주차 아카이브는 고정된 기록이므로 갱신하지 않음)
+  clearInterval(autoRefreshTimer);
+  if(!isArchiveWeek()){
+    autoRefreshTimer = setInterval(loadAndRender, AUTO_REFRESH_MS);
+  }
+}
+
+function toggleAll(){
+  const items = document.querySelectorAll('#list .task');
+  if(items.length === 0) return;
+  const shouldOpen = Array.from(items).some(el => !el.open);
+  items.forEach(el => { el.open = shouldOpen; });
+  updateToggleAllBtn();
+}
+
+function updateToggleAllBtn(){
+  const btn = document.getElementById('toggle-all-btn');
+  if(!btn) return;
+  const items = document.querySelectorAll('#list .task');
+  if(items.length === 0){ btn.textContent = '전체 펼치기'; return; }
+  const allOpen = Array.from(items).every(el => el.open);
+  btn.textContent = allOpen ? '전체 접기' : '전체 펼치기';
+}
+
+function toggleDeptTasks(section, deptName, btnEl){
+  const taskEls = section.querySelectorAll('.task');
+  if(taskEls.length === 0) return;
+  const shouldOpen = Array.from(taskEls).some(el => !el.open);
+  taskEls.forEach(el => { el.open = shouldOpen; });
+  if(shouldOpen && !section.open){
+    section.open = true;
+    collapsedDepts.delete(deptName);
+  }
+  btnEl.textContent = deptName + (shouldOpen ? ' 전체 접기' : ' 전체 펼치기');
+  updateToggleAllBtn();
+  updateToggleDeptBtn();
+}
+
+function toggleAllDepts(){
+  const items = document.querySelectorAll('#list .dept-section');
+  if(items.length === 0) return;
+  const shouldOpen = Array.from(items).some(el => !el.open);
+  items.forEach(el => {
+    el.open = shouldOpen;
+    const deptKey = el.querySelector('.dept-name')?.textContent || '';
+    if(shouldOpen){ collapsedDepts.delete(deptKey); } else { collapsedDepts.add(deptKey); }
+  });
+  updateToggleDeptBtn();
+}
+
+function updateToggleDeptBtn(){
+  const btn = document.getElementById('toggle-dept-btn');
+  if(!btn) return;
+  const items = document.querySelectorAll('#list .dept-section');
+  if(items.length === 0){ btn.textContent = '부서 전체 접기'; return; }
+  const allOpen = Array.from(items).every(el => el.open);
+  btn.textContent = allOpen ? '부서 전체 접기' : '부서 전체 펼치기';
+}
+
+function manualRefresh(){
+  loadAndRender();
+}
+
+document.getElementById('list').addEventListener('toggle', (e)=>{
+  if(e.target.classList && e.target.classList.contains('task')){
+    updateToggleAllBtn();
+  }
+  if(e.target.classList && e.target.classList.contains('dept-section')){
+    const deptKey = e.target.querySelector('.dept-name')?.textContent || '';
+    if(e.target.open){
+      collapsedDepts.delete(deptKey);
+    }else{
+      collapsedDepts.add(deptKey);
+    }
+    updateToggleDeptBtn();
+  }
+}, true);
+
+(async function start(){
+  await initWeekSelect();
+  await loadAndRender();
+})();
+</script>
+</body>
+</html>
