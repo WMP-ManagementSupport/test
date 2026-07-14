@@ -72,7 +72,7 @@
   .kpi.overdue .num{color:var(--hold);}
 
   /* filter bar */
-  .filters-row{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+  .filters-row{display:flex;flex-direction:column;gap:14px;margin-bottom:18px;}
   .filter-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .filter-label{font-size:11.5px;color:var(--faint);font-weight:700;white-space:nowrap;min-width:38px;}
   .filters{display:flex;gap:8px;flex-wrap:wrap;flex:1;}
@@ -81,8 +81,18 @@
   .chip:hover{border-color:var(--accent);color:var(--accent);}
   .chip.active{background:var(--ink);border-color:var(--ink);color:#fff;}
   .owner-chip.active{background:var(--accent);border-color:var(--accent);}
+
+  /* 상태/담당자 필터 칩들을 하나의 패널로 묶어 아래 보기 전환 버튼과 뚜렷하게 구분 */
+  .filters-panel{background:#fafbfc;border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+
+  .action-line{padding:0 2px;}
   .toggle-all-btn{font-size:12.5px;color:var(--accent);background:var(--accent-soft);border:1px solid transparent;border-radius:20px;padding:7px 14px;cursor:pointer;font-weight:600;white-space:nowrap;}
   .toggle-all-btn:hover{border-color:var(--accent);}
+  .toggle-all-btn.util-btn{color:var(--sub);background:#eef0f3;}
+  .toggle-all-btn.util-btn:hover{color:var(--accent);border-color:var(--accent);}
+  .toggle-all-btn.mode-btn{color:#fff;background:var(--accent);}
+  .toggle-all-btn.mode-btn:hover{background:#2e4568;border-color:#2e4568;}
+  .action-divider{width:1px;height:18px;background:var(--line);margin:0 2px;}
 
   /* task cards */
   .flow .box{border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.55;color:var(--ink);font-weight:500;white-space:pre-line;}
@@ -163,21 +173,26 @@
   .summary-card-title{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:12px;line-height:1.4;}
 
   /* 월간 완료업무 모아보기 */
-  .monthly-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+  .monthly-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:24px;}
   .monthly-toolbar .monthly-label{font-size:12.5px;color:var(--faint);font-weight:700;}
   .monthly-select{font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;}
   .monthly-count{font-size:12px;color:var(--sub);margin-left:auto;}
-  .monthly-dept-section{margin-bottom:26px;}
+
+  .monthly-week-section{margin-bottom:34px;}
+  .monthly-week-section:last-child{margin-bottom:0;}
+  .monthly-week-title{display:flex;align-items:baseline;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--accent);}
+  .monthly-week-tag-lg{font-size:16px;font-weight:800;color:var(--accent);letter-spacing:-0.01em;}
+  .monthly-week-count{font-size:12px;color:var(--sub);font-weight:600;}
+
+  .monthly-dept-section{margin-bottom:20px;}
   .monthly-dept-section:last-child{margin-bottom:0;}
-  .monthly-dept-title{font-size:15.5px;font-weight:800;color:var(--ink);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--ink);}
+  .monthly-dept-title{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:10px;}
   .monthly-owner-block{margin-bottom:16px;}
   .monthly-owner-block:last-child{margin-bottom:0;}
   .monthly-owner-name{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px;}
   .monthly-item{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin-bottom:8px;}
   .monthly-item:last-child{margin-bottom:0;}
-  .monthly-item-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
-  .monthly-item-title{font-size:13.5px;font-weight:700;color:var(--ink);}
-  .monthly-week-tag{font-size:10.5px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:2px 9px;border-radius:20px;white-space:nowrap;}
+  .monthly-item-title{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:6px;}
   .monthly-item-text{font-size:13px;color:#3f4654;line-height:1.6;white-space:pre-line;}
 
 
@@ -238,19 +253,23 @@
   </div>
 
   <div class="filters-row">
-    <div class="filter-line" id="status-filter-line">
-      <span class="filter-label">상태</span>
-      <div class="filters" id="filters"></div>
-    </div>
-    <div class="filter-line" id="owner-filter-line">
-      <span class="filter-label">담당자</span>
-      <div class="filters" id="owner-filters"></div>
+    <div class="filters-panel" id="filters-panel">
+      <div class="filter-line" id="status-filter-line">
+        <span class="filter-label">상태</span>
+        <div class="filters" id="filters"></div>
+      </div>
+      <div class="filter-line" id="owner-filter-line">
+        <span class="filter-label">담당자</span>
+        <div class="filters" id="owner-filters"></div>
+      </div>
     </div>
     <div class="filter-line action-line">
-      <button class="toggle-all-btn" id="toggle-dept-btn" onclick="toggleAllDepts()">부서 전체 접기</button>
-      <button class="toggle-all-btn" id="toggle-all-btn" onclick="toggleAll()">전체 펼치기</button>
-      <button class="toggle-all-btn" id="view-toggle-btn" onclick="toggleViewMode()">요약 보기</button>
-      <button class="toggle-all-btn" id="monthly-view-btn" onclick="toggleMonthlyView()">완료업무만 보기</button>
+      <span class="filter-label">보기</span>
+      <button class="toggle-all-btn util-btn" id="toggle-dept-btn" onclick="toggleAllDepts()">부서 전체 접기</button>
+      <button class="toggle-all-btn util-btn" id="toggle-all-btn" onclick="toggleAll()">전체 펼치기</button>
+      <span class="action-divider"></span>
+      <button class="toggle-all-btn mode-btn" id="view-toggle-btn" onclick="toggleViewMode()">요약 보기</button>
+      <button class="toggle-all-btn mode-btn" id="monthly-view-btn" onclick="toggleMonthlyView()">완료업무만 보기</button>
     </div>
   </div>
 
@@ -986,40 +1005,56 @@ async function renderMonthlyView(){
     return;
   }
 
-  const deptGroups = new Map();
+  // 주차별로 먼저 그룹화(엔트리는 이미 최신 주 -> 과거 주 순으로 들어와 있음)
+  const weekGroups = new Map();
   filtered.forEach(e=>{
-    if(!deptGroups.has(e.dept)) deptGroups.set(e.dept, []);
-    deptGroups.get(e.dept).push(e);
+    if(!weekGroups.has(e.weekTag)) weekGroups.set(e.weekTag, []);
+    weekGroups.get(e.weekTag).push(e);
   });
-  const deptKeys = sortedDeptKeys(deptGroups);
 
-  const sections = deptKeys.map(deptKey=>{
-    const items = deptGroups.get(deptKey);
-    const ownerGroups = new Map();
-    items.forEach(e=>{
-      if(!ownerGroups.has(e.owner)) ownerGroups.set(e.owner, []);
-      ownerGroups.get(e.owner).push(e);
+  const sections = Array.from(weekGroups.entries()).map(([weekTag, weekItems])=>{
+    const deptGroups = new Map();
+    weekItems.forEach(e=>{
+      if(!deptGroups.has(e.dept)) deptGroups.set(e.dept, []);
+      deptGroups.get(e.dept).push(e);
     });
+    const deptKeys = sortedDeptKeys(deptGroups);
 
-    const ownerBlocks = Array.from(ownerGroups.entries()).map(([ownerName, ownerItems])=>`
-        <div class="monthly-owner-block">
-          <div class="monthly-owner-name">${highlight(ownerName, term)} <span style="color:var(--faint);font-weight:600;">(${ownerItems.length}건)</span></div>
-          ${ownerItems.map(e=>`
-            <div class="monthly-item">
-              <div class="monthly-item-top">
-                <span class="monthly-week-tag">${e.weekTag}</span>
-                <span class="monthly-item-title">${highlight(e.title, term)}</span>
-              </div>
-              <div class="monthly-item-text">${linkify(highlight(e.text, term))}</div>
-            </div>`).join('')}
-        </div>`).join('');
+    const deptSections = deptKeys.map(deptKey=>{
+      const items = deptGroups.get(deptKey);
+      const ownerGroups = new Map();
+      items.forEach(e=>{
+        if(!ownerGroups.has(e.owner)) ownerGroups.set(e.owner, []);
+        ownerGroups.get(e.owner).push(e);
+      });
+
+      const ownerBlocks = Array.from(ownerGroups.entries()).map(([ownerName, ownerItems])=>`
+          <div class="monthly-owner-block">
+            <div class="monthly-owner-name">${highlight(ownerName, term)} <span style="color:var(--faint);font-weight:600;">(${ownerItems.length}건)</span></div>
+            ${ownerItems.map(e=>`
+              <div class="monthly-item">
+                <div class="monthly-item-title">${highlight(e.title, term)}</div>
+                <div class="monthly-item-text">${linkify(highlight(e.text, term))}</div>
+              </div>`).join('')}
+          </div>`).join('');
+
+      return `
+        <div class="monthly-dept-section">
+          <div class="monthly-dept-title">${deptKey} <span style="color:var(--sub);font-weight:600;font-size:12px;">${items.length}건</span></div>
+          ${ownerBlocks}
+        </div>`;
+    }).join('');
 
     return `
-      <div class="monthly-dept-section">
-        <div class="monthly-dept-title">${deptKey} <span style="color:var(--sub);font-weight:600;font-size:12px;">${items.length}건</span></div>
-        ${ownerBlocks}
+      <div class="monthly-week-section">
+        <div class="monthly-week-title">
+          <span class="monthly-week-tag-lg">${weekTag}</span>
+          <span class="monthly-week-count">${weekItems.length}건</span>
+        </div>
+        ${deptSections}
       </div>`;
   }).join('');
+
 
   list.innerHTML = toolbar + sections;
   populateMonthlySelect(months);
@@ -1065,15 +1100,16 @@ function updateMonthlyViewBtn(){
 // 월간 완료업무 보기에서는 주차별 상태/담당자 필터, 부서 펼치기 관련 버튼이 의미가 없으므로 숨기고
 // 화면 전환용 버튼(요약 보기/완료업무만 보기)이 있는 줄은 계속 보이게 둔다.
 function toggleUIForMonthlyView(){
-  const statusLine = document.getElementById('status-filter-line');
-  const ownerLine = document.getElementById('owner-filter-line');
-  if(statusLine) statusLine.style.display = monthlyViewActive ? 'none' : '';
-  if(ownerLine) ownerLine.style.display = monthlyViewActive ? 'none' : '';
+  const panel = document.getElementById('filters-panel');
+  if(panel) panel.style.display = monthlyViewActive ? 'none' : '';
 
   const hideWhileMonthly = ['toggle-dept-btn', 'toggle-all-btn', 'view-toggle-btn'];
   hideWhileMonthly.forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.style.display = monthlyViewActive ? 'none' : '';
+  });
+  document.querySelectorAll('.action-divider').forEach(el=>{
+    el.style.display = monthlyViewActive ? 'none' : '';
   });
 }
 
