@@ -218,7 +218,6 @@
       <select class="week-select" id="week-select" onchange="onWeekChange()"></select>
       <div class="sync-row">
         <span class="sync-time" id="sync-time"></span>
-        <button class="refresh-btn" id="monthly-view-btn" onclick="toggleMonthlyView()">월간 완료업무</button>
         <button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()">↻ 새로고침</button>
       </div>
     </div>
@@ -239,16 +238,19 @@
   </div>
 
   <div class="filters-row">
-    <div class="filter-line">
+    <div class="filter-line" id="status-filter-line">
       <span class="filter-label">상태</span>
       <div class="filters" id="filters"></div>
+    </div>
+    <div class="filter-line" id="owner-filter-line">
+      <span class="filter-label">담당자</span>
+      <div class="filters" id="owner-filters"></div>
+    </div>
+    <div class="filter-line action-line">
       <button class="toggle-all-btn" id="toggle-dept-btn" onclick="toggleAllDepts()">부서 전체 접기</button>
       <button class="toggle-all-btn" id="toggle-all-btn" onclick="toggleAll()">전체 펼치기</button>
       <button class="toggle-all-btn" id="view-toggle-btn" onclick="toggleViewMode()">요약 보기</button>
-    </div>
-    <div class="filter-line">
-      <span class="filter-label">담당자</span>
-      <div class="filters" id="owner-filters"></div>
+      <button class="toggle-all-btn" id="monthly-view-btn" onclick="toggleMonthlyView()">완료업무만 보기</button>
     </div>
   </div>
 
@@ -314,6 +316,15 @@ async function probeWeekSheet(sheetName){
   }
 }
 
+// 구글시트의 sheet= 파라미터는 이름이 존재하지 않을 때 에러 대신 엉뚱한(기본) 탭 내용을 돌려주는 경우가 있어,
+// B1 라벨이 실제로 요청한 "N월 M주"와 일치하는지 다시 한 번 검증한다. (완료업무 중복 표시 버그의 원인)
+function labelMatchesWeek(label, month, week){
+  const monthMatch = String(label || '').match(/(\d{1,2})월/);
+  const weekMatch = String(label || '').match(/(\d{1,2})주차?/);
+  if(!monthMatch || !weekMatch) return false;
+  return Number(monthMatch[1]) === month && Number(weekMatch[1]) === week;
+}
+
 // 스프레드시트 안의 "N월 M주" 탭들을 자동으로 찾아서 최신순으로 정렬한 목록을 만든다.
 async function discoverWeeks(){
   const now = new Date();
@@ -323,7 +334,7 @@ async function discoverWeeks(){
     const sortBase = d.getFullYear() * 12 + d.getMonth(); // 연도까지 고려한 정렬 기준값
     const month = d.getMonth() + 1;
     for(let week = 1; week <= MAX_WEEKS_PER_MONTH; week++){
-      candidates.push({ name: weekSheetName(month, week), sortBase, week });
+      candidates.push({ name: weekSheetName(month, week), sortBase, month, week });
     }
   }
 
@@ -331,7 +342,15 @@ async function discoverWeeks(){
 
   const found = [];
   probed.forEach((r, i)=>{
-    if(r) found.push({ sheet: r.sheet, label: r.label, sortBase: candidates[i].sortBase, week: candidates[i].week });
+    if(!r) return;
+    const c = candidates[i];
+    if(!labelMatchesWeek(r.label, c.month, c.week)){
+      // 탭 이름은 매칭됐지만 B1 라벨의 월/주차가 요청한 것과 다르면
+      // 잘못된(기본) 시트를 돌려받은 것으로 보고 버린다.
+      console.warn(`"${c.name}" 탭의 라벨이 예상과 달라 건너뜁니다:`, r.label);
+      return;
+    }
+    found.push({ sheet: r.sheet, label: r.label, sortBase: c.sortBase, week: c.week });
   });
 
   // 이름 기준 중복 제거 후 최신순(연/월 desc, 주차 desc) 정렬
@@ -470,14 +489,19 @@ async function fetchMonthlyCompleted(baseTasks){
 
   const map = new Map(); // key -> [{tag, text}, ...] (과거 -> 최신 순)
   const keyOf = (t)=> `${t.dept}|||${t.owner}|||${t.title}`;
+  const pushEntry = (key, tag, text)=>{
+    if(!map.has(key)) map.set(key, []);
+    const list = map.get(key);
+    // 같은 주차·같은 내용이 이미 들어있다면 중복 추가하지 않음 (탭 중복 탐색 등에 대비한 안전장치)
+    if(list.some(e => e.tag === tag && e.text === text)) return;
+    list.push({tag, text});
+  };
 
   chronological.forEach((w, idx)=>{
     const tag = weekTagOf(w.label);
     (olderResults[idx] || []).forEach(t=>{
       if(!t.last) return;
-      const key = keyOf(t);
-      if(!map.has(key)) map.set(key, []);
-      map.get(key).push({tag, text: t.last});
+      pushEntry(keyOf(t), tag, t.last);
     });
   });
 
@@ -485,9 +509,7 @@ async function fetchMonthlyCompleted(baseTasks){
   const curTag = weekTagOf(WEEKS[CURRENT_WEEK_INDEX].label);
   baseTasks.forEach(t=>{
     if(!t.last) return;
-    const key = keyOf(t);
-    if(!map.has(key)) map.set(key, []);
-    map.get(key).push({tag: curTag, text: t.last});
+    pushEntry(keyOf(t), curTag, t.last);
   });
 
   return {map, keyOf, weekCount: monthWeeks.length};
@@ -1037,13 +1059,22 @@ function toggleMonthlyView(){
 function updateMonthlyViewBtn(){
   const btn = document.getElementById('monthly-view-btn');
   if(!btn) return;
-  btn.textContent = monthlyViewActive ? '← 업무 목록으로' : '월간 완료업무';
+  btn.textContent = monthlyViewActive ? '← 업무 목록으로' : '완료업무만 보기';
 }
 
-// 월간 완료업무 보기에서는 주차별 상태/담당자 필터, 카드 보기 관련 버튼들이 의미가 없으므로 숨긴다.
+// 월간 완료업무 보기에서는 주차별 상태/담당자 필터, 부서 펼치기 관련 버튼이 의미가 없으므로 숨기고
+// 화면 전환용 버튼(요약 보기/완료업무만 보기)이 있는 줄은 계속 보이게 둔다.
 function toggleUIForMonthlyView(){
-  const filtersRow = document.querySelector('.filters-row');
-  if(filtersRow) filtersRow.style.display = monthlyViewActive ? 'none' : '';
+  const statusLine = document.getElementById('status-filter-line');
+  const ownerLine = document.getElementById('owner-filter-line');
+  if(statusLine) statusLine.style.display = monthlyViewActive ? 'none' : '';
+  if(ownerLine) ownerLine.style.display = monthlyViewActive ? 'none' : '';
+
+  const hideWhileMonthly = ['toggle-dept-btn', 'toggle-all-btn', 'view-toggle-btn'];
+  hideWhileMonthly.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = monthlyViewActive ? 'none' : '';
+  });
 }
 
 function toggleViewMode(){
