@@ -2,492 +2,557 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>페이코 이용분석 대시보드</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>주문서 상세</title>
 <style>
-  :root{
-    --navy:#132339;
-    --navy-2:#1c3350;
-    --paper:#F6F4EE;
-    --paper-2:#EFECE2;
-    --ink:#20262f;
-    --ink-soft:#5b6472;
-    --amber:#E8871E;
-    --amber-soft:#FBE3C4;
-    --teal:#2C7A72;
-    --teal-soft:#DCEEEB;
-    --rule:#D8D3C4;
-    --red:#B84A3E;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--paper);
-    color:var(--ink);
-    font-family:'IBM Plex Sans KR', sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
-  .mono{font-family:'IBM Plex Mono', monospace;}
-  .wrap{max-width:1160px;margin:0 auto;padding:0 20px 60px;}
-
-  /* ---- HEADER ---- */
-  header{
-    background:linear-gradient(180deg,var(--navy) 0%, var(--navy-2) 100%);
-    color:#F3EFE4;
-    padding:44px 20px 40px;
-    position:relative;
-    overflow:hidden;
-  }
-  header .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:24px;}
-  .eyebrow{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:12px;
-    letter-spacing:.16em;
-    text-transform:uppercase;
-    color:var(--amber);
-    margin-bottom:10px;
-  }
-  h1{
-    font-size:clamp(28px,4vw,40px);
-    margin:0 0 8px;
-    font-weight:700;
-    letter-spacing:-0.01em;
-  }
-  .subtitle{color:#B9C2CF;font-size:14.5px;margin:0;}
-  .period-badge{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:13px;
-    background:rgba(255,255,255,0.08);
-    border:1px solid rgba(255,255,255,0.18);
-    padding:10px 16px;
-    border-radius:2px;
-    color:#F3EFE4;
-    display:flex;
-    flex-direction:column;
-    gap:2px;
-    min-width:200px;
-  }
-  .period-badge .big{font-size:22px;font-weight:700;color:var(--amber);}
-
-  /* ---- KPI TICKETS (receipt stub) ---- */
-  .kpi-row{
-    display:grid;
-    grid-template-columns:repeat(5,1fr);
-    gap:14px;
-    margin-top:-28px;
-    position:relative;
-    z-index:2;
-  }
-  .ticket{
-    background:var(--paper);
-    border:1px solid var(--rule);
-    padding:16px 14px 14px;
-    position:relative;
-    box-shadow:0 8px 20px -12px rgba(19,35,57,0.35);
-  }
-  .ticket::before, .ticket::after{
-    content:"";
-    position:absolute;
-    top:-1px;
-    width:14px;height:14px;
-    background:var(--navy-2);
-    border-radius:50%;
-  }
-  .ticket::before{left:-8px;}
-  .ticket::after{right:-8px;}
-  .ticket .lbl{
-    font-size:11.5px;
-    color:var(--ink-soft);
-    letter-spacing:.03em;
-    margin-bottom:8px;
-  }
-  .ticket .val{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:24px;
-    font-weight:700;
-    color:var(--navy);
-    line-height:1.15;
-  }
-  .ticket .val span.unit{font-size:13px;font-weight:500;color:var(--ink-soft);margin-left:3px;}
-  .ticket .sub{font-size:11px;color:var(--teal);margin-top:6px;font-family:'IBM Plex Mono',monospace;}
-
-  /* ---- SECTIONS ---- */
-  section.panel{margin-top:34px;}
-  .panel-head{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    border-bottom:2px solid var(--navy);
-    padding-bottom:8px;
-    margin-bottom:16px;
-  }
-  .panel-head h2{
-    font-size:17px;
-    margin:0;
-    font-weight:700;
-    color:var(--navy);
-  }
-  .panel-head .desc{font-size:12px;color:var(--ink-soft);}
-
-  .grid-2{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;}
-  .grid-2-rev{display:grid;grid-template-columns:1fr 1.3fr;gap:18px;}
-  .card{
-    background:#fff;
-    border:1px solid var(--rule);
-    padding:18px;
-  }
-  .card h3{margin:0 0 12px;font-size:13.5px;color:var(--ink);font-weight:600;}
-  .chart-box{position:relative;height:260px;}
-  .chart-box.short{height:210px;}
-
-  /* ---- RANK LIST ---- */
-  .rank-list{list-style:none;margin:0;padding:0;}
-  .rank-list li{
-    display:grid;
-    grid-template-columns:26px 1fr auto;
-    align-items:center;
-    gap:10px;
-    padding:8px 0;
-    border-bottom:1px dashed var(--rule);
-    font-size:13px;
-  }
-  .rank-list li:last-child{border-bottom:none;}
-  .rank-list .n{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11px;
-    color:#fff;
-    background:var(--navy);
-    width:20px;height:20px;
-    display:flex;align-items:center;justify-content:center;
-    border-radius:50%;
-  }
-  .rank-list li:nth-child(1) .n, .rank-list li:nth-child(2) .n, .rank-list li:nth-child(3) .n{background:var(--amber);}
-  .rank-list .name{font-weight:500;}
-  .rank-list .meta{color:var(--ink-soft);font-size:11px;}
-  .rank-list .amt{
-    font-family:'IBM Plex Mono',monospace;
-    font-weight:600;
-    color:var(--navy);
-    text-align:right;
-  }
-  .bar-track{
-    grid-column:1/-1;
-    height:5px;
-    background:var(--paper-2);
-    margin-top:2px;
-    overflow:hidden;
-  }
-  .bar-fill{height:100%;background:var(--teal);}
-  .bar-fill.amber{background:var(--amber);}
-
-  /* ---- INSIGHTS ---- */
-  .insights{
-    background:var(--navy);
-    color:#F3EFE4;
-    padding:28px;
-    margin-top:34px;
-  }
-  .insights h2{
-    font-size:17px;margin:0 0 18px;font-weight:700;
-    display:flex;align-items:center;gap:8px;
-  }
-  .insights h2::before{content:"";width:8px;height:8px;background:var(--amber);display:inline-block;}
-  .insight-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
-  .insight-item{
-    background:rgba(255,255,255,0.05);
-    border-left:3px solid var(--amber);
-    padding:14px 16px;
-    font-size:13px;
-    line-height:1.6;
-    color:#DCE1E8;
-  }
-  .insight-item b{color:#F3EFE4;font-family:'IBM Plex Mono',monospace;}
-
-  footer{
-    text-align:center;
-    padding:24px 20px;
-    color:var(--ink-soft);
-    font-size:11.5px;
-    font-family:'IBM Plex Mono',monospace;
-  }
-
-  @media (max-width:900px){
-    .kpi-row{grid-template-columns:repeat(2,1fr);}
-    .grid-2, .grid-2-rev{grid-template-columns:1fr;}
-    .insight-grid{grid-template-columns:1fr;}
-  }
+:root {
+  --pink: #e94c87;
+  --text: #252525;
+  --muted: #858585;
+  --line: #ededed;
+  --section: #f5f6f7;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: #fff;
+  color: var(--text);
+  font-family: Arial, "Malgun Gothic", "Apple SD Gothic Neo",
+               sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+}
+button { font: inherit; color: inherit; }
+.page {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #fff;
+  padding-bottom: 28px;
+}
+.header {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 19px;
+  position: relative;
+}
+.header-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.header-icon {
+  width: 18px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23px;
+  font-weight: 300;
+  color: #444;
+}
+.home-icon {
+  width: 13px;
+  height: 12px;
+  position: relative;
+  border: 1.5px solid #333;
+  border-top: 0;
+  border-radius: 1px;
+  margin-top: 5px;
+}
+.home-icon::before {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-left: 1.5px solid #333;
+  border-top: 1.5px solid #333;
+  transform: rotate(45deg);
+  left: 1px;
+  top: -4px;
+  background: white;
+}
+.progress {
+  padding: 5px 20px 0;
+  height: 37px;
+}
+.progress-track {
+  position: relative;
+  height: 8px;
+  margin: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.progress-track::before {
+  content: "";
+  position: absolute;
+  height: 2px;
+  left: 0;
+  right: 0;
+  background: #f0f0f0;
+}
+.dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  background: #f1f1f1;
+  border-radius: 50%;
+}
+.dot.active {
+  width: 9px;
+  height: 9px;
+  background: var(--pink);
+  border: 2px solid #f7c7da;
+  box-shadow: 0 0 0 2px #fbe8ef;
+}
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  color: #aaa;
+  font-size: 9px;
+  margin-top: 0;
+}
+.progress-labels .active-label {
+  color: var(--pink);
+  font-weight: 700;
+}
+.notice {
+  background: #f7f8fa;
+  border-radius: 8px;
+  margin: 0 20px 12px;
+  padding: 8px 9px 7px;
+  color: #8b8b8b;
+  font-size: 10px;
+  line-height: 1.9;
+}
+.notice p { margin: 0; }
+.section-gap {
+  height: 7px;
+  background: var(--section);
+  border-top: 1px solid #f2f2f2;
+  border-bottom: 1px solid #f2f2f2;
+}
+.section {
+  padding: 12px 20px 13px;
+}
+.section-title {
+  font-size: 12px;
+  line-height: 1.6;
+  font-weight: 700;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 10px;
+}
+.meta {
+  color: #888;
+  font-size: 10px;
+  line-height: 1.7;
+}
+.meta strong {
+  color: #454545;
+  font-weight: 400;
+}
+.product-subtitle {
+  font-size: 10px;
+  color: #8a8a8a;
+  margin-top: 2px;
+}
+.product-name {
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 3px;
+  line-height: 1.6;
+}
+.pin-button {
+  margin-top: 10px;
+  height: 21px;
+  padding: 0 10px;
+  border: 1px solid #e4e4e4;
+  border-radius: 12px;
+  background: white;
+  font-size: 10px;
+}
+.transaction {
+  padding-top: 10px;
+  padding-bottom: 12px;
+}
+.field {
+  margin-bottom: 7px;
+}
+.field:last-child { margin-bottom: 0; }
+.field-label {
+  color: #888;
+  font-size: 10px;
+  margin-bottom: 1px;
+}
+.field-value {
+  font-size: 11px;
+  color: #292929;
+}
+.amount-wrap {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 0 10px;
+  margin-top: 3px;
+}
+.amount {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  color: #d94b79;
+  line-height: 1.4;
+}
+.amount small {
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: #999;
+}
+.data-section {
+  padding-top: 11px;
+  padding-bottom: 12px;
+}
+.data-section .section-title {
+  border: 0;
+  padding: 0;
+  margin: 0 0 9px;
+}
+.data-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 11px;
+}
+.data-row .label {
+  color: #898989;
+  white-space: nowrap;
+}
+.data-row .value {
+  color: #333;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.payment {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.seller {
+  padding-top: 12px;
+  padding-bottom: 13px;
+}
+.footer {
+  margin-top: 8px;
+  border-top: 1px solid #eee;
+  padding: 0 20px;
+}
+.footer-menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  white-space: nowrap;
+  height: 31px;
+  border-bottom: 1px solid #eee;
+  font-size: 9px;
+  font-weight: 600;
+}
+.support {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid #e9e9e9;
+}
+.support-title {
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.support p {
+  margin: 2px 0;
+  font-size: 9px;
+  line-height: 1.7;
+}
+.support .link {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.brand-row {
+  height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.brand-logo {
+  font-weight: 1000;
+  font-style: italic;
+  letter-spacing: -1px;
+  font-size: 16px;
+  color: #111;
+  white-space: nowrap;
+}
+.brand-logo .mark {
+  display: inline-block;
+  font-size: 21px;
+  transform: skew(-12deg);
+  margin-right: 3px;
+}
+.socials {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.social {
+  background: #050505;
+  color: #fff;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+}
+.company {
+  border-bottom: 1px solid #e9e9e9;
+  padding: 8px 0 10px;
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+}
+.chevron {
+  font-size: 13px;
+  font-weight: 400;
+}
+.legal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 15px 0 9px;
+}
+.legal-grid div {
+  border: 1px solid #eee;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 9px;
+}
+.copyright {
+  color: #8d8d8d;
+  font-size: 9px;
+  margin: 1px 0 10px;
+}
+.disclaimer {
+  font-size: 9px;
+  color: #aaa;
+  line-height: 1.65;
+  word-break: keep-all;
+  margin: 0 0 10px;
+}
+.global-button {
+  height: 22px;
+  width: 100%;
+  border: 0;
+  background: #050505;
+  color: white;
+  border-radius: 5px;
+  font-size: 9px;
+  margin: 1px 0 0;
+}
+.floating {
+  position: fixed;
+  bottom: 28px;
+  right: max(13px, calc((100vw - 430px) / 2 + 13px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.float-top {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #eee;
+  border-radius: 50%;
+  background: #fff;
+  color: #555;
+  font-size: 19px;
+  box-shadow: 0 2px 5px #0000000b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.float-chat {
+  width: 29px;
+  height: 29px;
+  border-radius: 50%;
+  background: #050505;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 15px;
+  box-shadow: 0 2px 5px #0002;
+}
+@media (min-width: 431px) {
+  body { background: #f7f7f7; }
+  .page { box-shadow: 0 0 1px #ddd; }
+}
 </style>
 </head>
 <body>
+<main class="page">
+  <header class="header">
+    <span class="header-icon" aria-hidden="true">‹</span>
+    <div class="header-title">주문서 상세</div>
+    <span class="home-icon" aria-hidden="true"></span>
+  </header>
 
-<header>
-  <div class="wrap">
-    <div>
-      <div class="eyebrow">General Affairs · Payco Meal Card</div>
-      <h1>페이코 이용분석 대시보드</h1>
-      <p class="subtitle">판교 임직원 식대 결제 내역 · 2025년 10월 ~ 2026년 6월 (9개월)</p>
+  <div class="progress">
+    <div class="progress-track">
+      <span class="dot"></span>
+      <span class="dot active"></span>
+      <span class="dot"></span>
     </div>
-    <div class="period-badge">
-      <span>누적 결제금액</span>
-      <span class="big mono" id="hdrTotal">-</span>
-      <span style="color:#8894A3;">23,540건 · 222명 · 284개 가맹점</span>
-    </div>
-  </div>
-</header>
-
-<div class="wrap">
-
-  <div class="kpi-row">
-    <div class="ticket">
-      <div class="lbl">총 결제금액</div>
-      <div class="val" id="kpiTotal">-</div>
-      <div class="sub">월평균 3,883만원</div>
-    </div>
-    <div class="ticket">
-      <div class="lbl">총 결제건수</div>
-      <div class="val" id="kpiCount">-</div>
-      <div class="sub">월평균 2,616건</div>
-    </div>
-    <div class="ticket">
-      <div class="lbl">건당 평균 결제액</div>
-      <div class="val" id="kpiAvg">-</div>
-      <div class="sub">점심 15.3천 · 저녁 21.8천</div>
-    </div>
-    <div class="ticket">
-      <div class="lbl">이용 임직원</div>
-      <div class="val" id="kpiUsers">-</div>
-      <div class="sub">월평균 196명 활동</div>
-    </div>
-    <div class="ticket">
-      <div class="lbl">이용 가맹점</div>
-      <div class="val" id="kpiStores">-</div>
-      <div class="sub">10월 151 → 6월 178개</div>
+    <div class="progress-labels">
+      <span>결제완료</span>
+      <span class="active-label">PIN전달완료</span>
+      <span>거래완료</span>
     </div>
   </div>
 
-  <!-- 월별 추이 -->
-  <section class="panel">
-    <div class="panel-head">
-      <h2>월별 이용 추이</h2>
-      <div class="desc">2025.10 – 2026.06</div>
+  <div class="notice">
+    <p>· 구매 상품이 PIN전달 완료되었습니다.</p>
+    <p>· PIN 확인이 가능합니다.</p>
+  </div>
+
+  <div class="section-gap"></div>
+
+  <section class="section">
+    <div class="section-title">주문 상품 정보</div>
+    <div class="meta">
+      상품번호 <strong>2508897841775</strong><br>
+      스포츠 &gt; 2026 프로야구 포스트시즌 &gt; 플레이오프 1차전 [대구]<br>
+      경기 일시 <strong>2026.10.25 14:00</strong>
     </div>
-    <div class="grid-2">
-      <div class="card">
-        <h3>월별 결제금액 &amp; 건수</h3>
-        <div class="chart-box"><canvas id="chartMonthly"></canvas></div>
-      </div>
-      <div class="card">
-        <h3>월별 이용자 수 · 가맹점 수</h3>
-        <div class="chart-box"><canvas id="chartMonthlyUsers"></canvas></div>
-      </div>
+    <div class="product-name">KIA vs 삼성&nbsp; |&nbsp; 1-3구역&nbsp; |&nbsp; 12열</div>
+    <div class="product-subtitle">경쟁중립석</div>
+    <button class="pin-button" type="button">PIN 선물하기</button>
+  </section>
+
+  <div class="section-gap"></div>
+
+  <section class="section transaction">
+    <div class="field">
+      <div class="field-label">거래 방식</div>
+      <div class="field-value">PIN(E-ticket) 거래</div>
+    </div>
+    <div class="field">
+      <div class="field-label">수량</div>
+      <div class="field-value">2매/연석</div>
+    </div>
+    <div class="field">
+      <div class="field-label">티켓 보유 여부</div>
+      <div class="field-value">보유중</div>
+    </div>
+    <div class="amount-wrap">
+      <div class="field-label">금액</div>
+      <div class="amount">320,000원 <small>(1,380P 적립)</small></div>
     </div>
   </section>
 
-  <!-- 시간대 -->
-  <section class="panel">
-    <div class="panel-head">
-      <h2>이용 시간 패턴</h2>
-      <div class="desc">아침 / 점심 / 저녁 · 시간대별</div>
+  <div class="section-gap"></div>
+
+  <section class="section data-section payment">
+    <div class="section-title">결제 수단</div>
+    <div class="data-row">
+      <span class="label">결제 수단</span>
+      <span class="value">신용카드(HECTO) / 현대비자</span>
     </div>
-    <div class="grid-2-rev">
-      <div class="card">
-        <h3>구간별 결제 비중</h3>
-        <div class="chart-box short"><canvas id="chartSlot"></canvas></div>
-      </div>
-      <div class="card">
-        <h3>시간대별(시각) 결제 건수</h3>
-        <div class="chart-box short"><canvas id="chartHour"></canvas></div>
-      </div>
+    <div class="data-row">
+      <span class="label">결제 일자</span>
+      <span class="value">2026.10.22 15:28</span>
     </div>
   </section>
 
-  <!-- 요일 & 결제수단 -->
-  <section class="panel">
-    <div class="panel-head">
-      <h2>요일별 · 결제수단별 이용</h2>
-      <div class="desc">평일 집중도 및 결제수단 구성</div>
+  <div class="section-gap"></div>
+
+  <section class="section data-section seller">
+    <div class="section-title">판매자 정보</div>
+    <div class="data-row">
+      <span class="label">이름</span>
+      <span class="value">김*혜</span>
     </div>
-    <div class="grid-2">
-      <div class="card">
-        <h3>요일별 결제금액</h3>
-        <div class="chart-box"><canvas id="chartWeekday"></canvas></div>
-      </div>
-      <div class="card">
-        <h3>결제수단 구성</h3>
-        <div class="chart-box"><canvas id="chartPayment"></canvas></div>
-      </div>
+    <div class="data-row">
+      <span class="label">안심번호</span>
+      <span class="value">0502-1228-1011</span>
     </div>
   </section>
 
-  <!-- Top 가맹점 / 이용자 -->
-  <section class="panel">
-    <div class="panel-head">
-      <h2>TOP 가맹점 &amp; 이용자</h2>
-      <div class="desc">누적 결제금액 기준 상위 10</div>
-    </div>
-    <div class="grid-2">
-      <div class="card">
-        <h3>가맹점 랭킹 TOP 10</h3>
-        <ul class="rank-list" id="rankStores"></ul>
-      </div>
-      <div class="card">
-        <h3>이용자 랭킹 TOP 10</h3>
-        <ul class="rank-list" id="rankUsers"></ul>
-      </div>
-    </div>
-  </section>
+  <div class="footer">
+    <nav class="footer-menu" aria-label="서비스 메뉴">
+      <span>서비스소개</span>
+      <span>이용가이드</span>
+      <span>공지사항</span>
+      <span>고객센터</span>
+    </nav>
 
-  <section class="insights">
-    <h2>분석 요약 &amp; 인사이트</h2>
-    <div class="insight-grid" id="insightGrid"></div>
-  </section>
+    <section class="support">
+      <div class="support-title">고객센터 | 1644-0633</div>
+      <p>운영시간 : 09:00 ~ 22:00 (평일/주말/공휴일)</p>
+      <p>점심시간 : 12:00 ~ 13:00</p>
+      <p class="link">부정거래 신고하기 &nbsp;›</p>
+    </section>
 
+    <div class="brand-row">
+      <div class="brand-logo"><span class="mark">▰</span>TICKETBAY</div>
+      <div class="socials" aria-label="소셜 미디어">
+        <span class="social">▶</span>
+        <span class="social">◎</span>
+        <span class="social">f</span>
+        <span class="social">N</span>
+      </div>
+    </div>
+
+    <div class="company">
+      <span>(주)팀플러스 사업자 정보</span>
+      <span class="chevron">⌄</span>
+    </div>
+
+    <div class="legal-grid">
+      <div>이용약관</div>
+      <div>취소·환불 정책</div>
+      <div>개인정보처리방침</div>
+      <div>청소년보호정책</div>
+    </div>
+
+    <div class="copyright">© TICKETBAY. ALL RIGHTS RESERVED.</div>
+
+    <p class="disclaimer">
+      티켓베이는 통신판매 중개자이며, 통신판매의 당사자가 아닙니다.
+      따라서 티켓베이는 상품 거래정보 및 거래에 대하여 책임을 지지 않습니다.
+    </p>
+
+    <button class="global-button" type="button">
+      TICKETBAY GLOBAL &nbsp;›
+    </button>
+  </div>
+</main>
+
+<div class="floating" aria-hidden="true">
+  <div class="float-top">⌃</div>
+  <div class="float-chat">◉</div>
 </div>
-
-<footer>SOURCE — [총무]페이코 이용 분석 · Google Sheets (상세이용내역_25년10월 ~ 6월) · Generated by Claude</footer>
-
-<script>
-const DATA = {"monthly": {"labels": ["25.10", "25.11", "25.12", "26.01", "26.02", "26.03", "26.04", "26.05", "26.06"], "total": [37186812, 37805686, 37960510, 38660754, 38764322, 39714930, 39840640, 39763024, 39790215], "count": [2584, 2796, 2601, 2896, 2274, 2667, 2764, 2371, 2587], "users": [189, 192, 196, 196, 196, 201, 200, 200, 199], "stores": [151, 165, 170, 163, 166, 177, 180, 171, 178]}, "weekday": {"labels": ["월", "화", "수", "목", "금", "토", "일"], "total": [63700148, 66700703, 67675881, 68210447, 74300229, 5138490, 3760995], "count": [4807, 4721, 4800, 4746, 4322, 87, 57]}, "hour": {"labels": ["7시", "8시", "9시", "10시", "11시", "12시", "13시", "14시", "15시", "16시", "17시", "18시", "19시", "20시", "21시", "22시"], "total": [1873800, 6940030, 5234500, 2477262, 4944500, 66010215, 196319286, 11577470, 1885100, 2377720, 6067620, 16257445, 15216555, 7760490, 2980300, 734500], "count": [296, 1255, 910, 339, 526, 6623, 10671, 432, 106, 178, 384, 1012, 511, 199, 64, 17]}, "slot": {"labels": ["아침", "점심", "저녁"], "total": [16528092, 280429421, 52529380], "count": [2801, 18333, 2406], "avg": [5901, 15296, 21833]}, "payment": {"labels": ["쿠폰", "카드복합결제", "포인트복합결제"], "total": [330007310, 18352783, 1126800], "count": [22321, 1078, 141]}, "topStores": [{"name": "삼성웰스토리(주)코리아벤쳐타운", "total": 42875700, "count": 5075}, {"name": "주식회사 딜라잇", "total": 27011950, "count": 3431}, {"name": "로열로스터리", "total": 10578112, "count": 2169}, {"name": "꼬마김밥", "total": 9794000, "count": 1204}, {"name": "맥도날드(판교테크노밸리점)", "total": 6595300, "count": 794}, {"name": "타코익스체인지", "total": 6312900, "count": 360}, {"name": "명품보쌈", "total": 6240000, "count": 376}, {"name": "밥볶다(동판교점)", "total": 6082650, "count": 298}, {"name": "베이징스토리(판교점)", "total": 5538600, "count": 270}, {"name": "빈티지1988", "total": 5132200, "count": 67}], "topUsers": [{"name": "채수민", "total": 4715500, "count": 109}, {"name": "석수민", "total": 3859000, "count": 92}, {"name": "이찬구", "total": 3322080, "count": 143}, {"name": "김하형", "total": 2784600, "count": 108}, {"name": "최이랑", "total": 2603650, "count": 150}, {"name": "서영찬", "total": 2579950, "count": 96}, {"name": "이은정", "total": 2526800, "count": 209}, {"name": "김민재", "total": 2509400, "count": 207}, {"name": "김도경", "total": 2494500, "count": 78}, {"name": "박종우", "total": 2491800, "count": 71}], "kpi": {"total": 349486893, "count": 23540, "avg": 14846, "users": 222, "stores": 284, "months": 9}};
-
-const won = n => new Intl.NumberFormat('ko-KR').format(Math.round(n));
-const manwon = n => (n/10000).toFixed(0);
-
-// KPI fill
-document.getElementById('hdrTotal').textContent = won(DATA.kpi.total) + '원';
-document.getElementById('kpiTotal').innerHTML = manwon(DATA.kpi.total) + '<span class="unit">만원</span>';
-document.getElementById('kpiCount').innerHTML = won(DATA.kpi.count) + '<span class="unit">건</span>';
-document.getElementById('kpiAvg').innerHTML = won(DATA.kpi.avg) + '<span class="unit">원</span>';
-document.getElementById('kpiUsers').innerHTML = won(DATA.kpi.users) + '<span class="unit">명</span>';
-document.getElementById('kpiStores').innerHTML = won(DATA.kpi.stores) + '<span class="unit">개</span>';
-
-Chart.defaults.font.family = "'IBM Plex Sans KR', sans-serif";
-Chart.defaults.color = '#5b6472';
-Chart.defaults.font.size = 11.5;
-
-const NAVY = '#132339', AMBER='#E8871E', TEAL='#2C7A72', RED='#B84A3E', PAPER2='#EFECE2';
-
-// 월별 결제금액 & 건수
-new Chart(document.getElementById('chartMonthly'), {
-  data:{
-    labels: DATA.monthly.labels,
-    datasets:[
-      {type:'bar', label:'결제금액(원)', data: DATA.monthly.total, backgroundColor: AMBER, order:2, yAxisID:'y'},
-      {type:'line', label:'결제건수', data: DATA.monthly.count, borderColor: NAVY, backgroundColor:NAVY, tension:.3, order:1, yAxisID:'y1', pointRadius:3}
-    ]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{position:'top', labels:{boxWidth:10}}},
-    scales:{
-      y:{position:'left', grid:{color:PAPER2}, ticks:{callback:v=>manwon(v)+'만'}},
-      y1:{position:'right', grid:{display:false}, ticks:{callback:v=>v}}
-    }
-  }
-});
-
-// 월별 이용자수/가맹점수
-new Chart(document.getElementById('chartMonthlyUsers'), {
-  type:'line',
-  data:{
-    labels: DATA.monthly.labels,
-    datasets:[
-      {label:'이용 임직원(명)', data: DATA.monthly.users, borderColor: TEAL, backgroundColor:TEAL, tension:.3, pointRadius:3},
-      {label:'이용 가맹점(개)', data: DATA.monthly.stores, borderColor: AMBER, backgroundColor:AMBER, tension:.3, pointRadius:3}
-    ]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{position:'top', labels:{boxWidth:10}}},
-    scales:{y:{grid:{color:PAPER2}}}
-  }
-});
-
-// 시간대 구성 (도넛)
-new Chart(document.getElementById('chartSlot'), {
-  type:'doughnut',
-  data:{
-    labels: DATA.slot.labels.map((l,i)=>l+' ('+((DATA.slot.total[i]/DATA.kpi.total)*100).toFixed(1)+'%)'),
-    datasets:[{data: DATA.slot.total, backgroundColor:[TEAL, AMBER, NAVY], borderWidth:2, borderColor:'#fff'}]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:11}}}}
-  }
-});
-
-// 시간별 건수
-new Chart(document.getElementById('chartHour'), {
-  type:'bar',
-  data:{
-    labels: DATA.hour.labels,
-    datasets:[{label:'결제건수', data: DATA.hour.count, backgroundColor: NAVY, borderRadius:2}]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    scales:{y:{grid:{color:PAPER2}}, x:{grid:{display:false}}}
-  }
-});
-
-// 요일별
-new Chart(document.getElementById('chartWeekday'), {
-  type:'bar',
-  data:{
-    labels: DATA.weekday.labels,
-    datasets:[{label:'결제금액(원)', data: DATA.weekday.total, backgroundColor: DATA.weekday.labels.map(l=> (l==='토'||l==='일') ? '#C9C2AE' : AMBER), borderRadius:3}]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    scales:{y:{grid:{color:PAPER2}, ticks:{callback:v=>manwon(v)+'만'}}, x:{grid:{display:false}}}
-  }
-});
-
-// 결제수단
-new Chart(document.getElementById('chartPayment'), {
-  type:'pie',
-  data:{
-    labels: DATA.payment.labels.map((l,i)=>l+' ('+((DATA.payment.total[i]/DATA.kpi.total)*100).toFixed(1)+'%)'),
-    datasets:[{data: DATA.payment.total, backgroundColor:[AMBER, NAVY, TEAL], borderWidth:2, borderColor:'#fff'}]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom', labels:{boxWidth:10, font:{size:11}}}}
-  }
-});
-
-// Rank lists
-function renderRank(elId, arr){
-  const el = document.getElementById(elId);
-  const max = Math.max(...arr.map(a=>a.total));
-  el.innerHTML = arr.map((a,i)=>`
-    <li>
-      <span class="n">${i+1}</span>
-      <span class="name">${a.name}</span>
-      <span class="amt">${won(a.total)}원</span>
-      <span class="meta" style="grid-column:2/3;">${won(a.count)}건 · 건당 ${won(Math.round(a.total/a.count))}원</span>
-      <span></span>
-      <div class="bar-track"><div class="bar-fill ${i<3?'amber':''}" style="width:${(a.total/max*100).toFixed(0)}%"></div></div>
-    </li>`).join('');
-}
-renderRank('rankStores', DATA.topStores);
-renderRank('rankUsers', DATA.topUsers);
-
-// Insights
-const insights = [
-  `9개월 누적 결제금액은 <b>${won(DATA.kpi.total)}원</b>(${DATA.kpi.count.toLocaleString()}건)이며, 월별 총액은 10월 3,719만원에서 6월 3,979만원으로 완만히 증가(<b>+6.9%</b>)했습니다. 활동 이용자 수도 189명→199명, 이용 가맹점 수는 151개→178개로 함께 늘어 이용 저변이 꾸준히 확대되는 추세입니다.`,
-  `점심시간(12~14시)이 전체 결제금액의 <b>80.2%</b>를 차지하며, 특히 13시 단일 시간대만 <b>${((196319286/DATA.kpi.total)*100).toFixed(1)}%</b>(약 1억9,632만원)로 압도적입니다. 12~13시 사이 결제가 집중되어 있어 해당 시간대 가맹점 혼잡·결제 지연 가능성을 함께 살펴볼 필요가 있습니다.`,
-  `저녁 시간대 건당 평균 결제액은 <b>21,833원</b>으로 점심(15,296원) 대비 <b>+42.7%</b> 높습니다. 저녁 결제 중 20만원 이상 고액 건이 다수 관측되어(예: 이가네양꼬치 304,000원 등), 회식성 결제가 다수 포함된 것으로 추정됩니다.`,
-  `사내식당 성격의 <b>삼성웰스토리</b>(4,288만원)와 <b>주식회사 딜라잇</b>(2,701만원)을 합치면 전체의 <b>20.0%</b>를 차지해 임직원 식대의 상당 부분이 사내 지정 채널로 소비되고 있습니다. 나머지 80%는 판교 인근 외부 가맹점 284곳에 폭넓게 분산되어 있습니다.`,
-  `결제수단은 <b>쿠폰</b> 방식이 전체 금액의 <b>94.4%</b>(3억3,001만원)로 압도적이며, 카드복합결제(5.3%)·포인트복합결제(0.3%)는 보조적으로 사용되고 있습니다.`,
-  `요일별로는 <b>금요일</b>이 건수는 가장 적지만(4,322건) 결제금액은 가장 높아(7,430만원, 건당 평균 17,192원) 주간 최고치를 기록했습니다. 반면 토·일요일 결제는 전체의 2.5% 수준(합계 887만원)에 그쳐 평일 근무일 이용이 절대적입니다.`
-];
-document.getElementById('insightGrid').innerHTML = insights.map(t=>`<div class="insight-item">${t}</div>`).join('');
-</script>
-
 </body>
 </html>
